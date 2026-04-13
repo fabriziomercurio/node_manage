@@ -1,0 +1,20 @@
+POST http://localhost:3000/form-data-products
+// X-HTTP-Method-Override: PUT
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="title"
+
+// Title from form-data
+
+// ------WebKitFormBoundary7MA4YWxkTrZu0gW
+// Content-Disposition: form-data; name="descr"
+
+// Descrizione testing from product with image updated 
+
+// ------WebKitFormBoundary7MA4YWxkTrZu0gW
+// Content-Disposition: form-data; name="image"; filename="Tennis-PNG-Image.png"
+// Content-Type: image/png
+
+// < ./Tennis-PNG-Image.png
+// ------WebKitFormBoundary7MA4YWxkTrZu0gW--

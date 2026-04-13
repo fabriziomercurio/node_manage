@@ -12,7 +12,7 @@ COPY . .
 # Compile TypeScript to JavaScript
 RUN npm run build 
 
-EXPOSE 5000 
+EXPOSE 3000 
 
 # Command to start the application
 CMD ["npm","start"]

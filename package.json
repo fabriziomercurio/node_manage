@@ -16,5 +16,8 @@
     "@types/node": "^25.5.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "mysql2": "^3.22.0"
   }
 }

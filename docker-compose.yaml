@@ -6,4 +6,14 @@ services:
       - "3000:3000"
     volumes:
       - .:/app 
-    command: npm run dev
+    command: npm run dev 
+  
+  db: 
+    image: mysql:8.0.45 
+    environment:       
+      MYSQL_DATABASE: manage
+      MYSQL_ROOT_PASSWORD: root
+    volumes: 
+      - ./storage/dbdata:/var/lib/mysql
+    ports: 
+      - 3360:3306
