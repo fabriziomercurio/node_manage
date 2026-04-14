@@ -34,6 +34,7 @@ const server = http.createServer(async (req,res) => {
         try {
         const [rows] = await pool.query("SELECT * FROM products");
         res.end(JSON.stringify(rows));
+        return;
         } catch (err) {
             console.error("Errore DB:", err);
             res.statusCode = 500;
@@ -81,9 +82,37 @@ const server = http.createServer(async (req,res) => {
             const  {title} = JSON.parse(data); 
             await pool.query("UPDATE products SET title = ? WHERE id = ?",[title,id]);
             res.end("record with id: " + id + " updated");
-        })
-        
+        })       
     }     
+
+    if (req.method === 'POST' && req.url === '/users') {
+    let data = ""; 
+
+    req.on("data", chunk => data += chunk);
+
+    req.on("end", async () => {
+        try {
+            const { email, password } = JSON.parse(data);
+
+            await pool.query(
+                "INSERT INTO users (email, password) VALUES (?,?)",
+                [email,password]
+            );
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ message: "record insert with success" })); 
+            return;
+        } catch (err) {
+            console.error(err);
+            res.writeHead(500);
+            res.end(JSON.stringify(err));
+        }
+    });
+
+    } else {
+        res.writeHead(404);
+        res.end("Not found");
+    }
 }) 
 
 server.listen(3000);
