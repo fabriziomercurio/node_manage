@@ -7,7 +7,7 @@ const pool = mysql.createPool({
   database: 'manage',
   port: 3306,
   password: 'root',
-});
+}); 
 
 function handleCors(req:any, res:any) {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5000");
@@ -97,10 +97,19 @@ const server = http.createServer(async (req,res) => {
     
     if(req.method === 'GET' && url?.startsWith('/products/')) 
     {    
+       try {
         const id = url.split('/')[2];
-        const [row] = await pool.query("SELECT * FROM products WHERE id = ?",[id]);
-        res.write(JSON.stringify(row));
-        res.end(id);
+        const [row] = await pool.query("SELECT * FROM products WHERE id = ?",[id]); 
+        const record = (row as any[])[0]; 
+        res.write(JSON.stringify(record));
+        res.end(); 
+        return;
+        } catch (error) {
+            console.error("Errore DB:", error);
+            res.statusCode = 500;
+            res.end("Errore DB");
+        }
+
     }
 
     if(req.method === 'DELETE' && url?.startsWith('/products/')) 
