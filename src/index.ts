@@ -1,5 +1,7 @@
 import http from "node:http";  
 import mysql from "mysql2/promise"; 
+import express from 'express'
+import apiRoute from './routes/api.js'
 
 const pool = mysql.createPool({
   host: 'db',
@@ -23,11 +25,20 @@ function handleCors(req:any, res:any) {
   return true; // eaves to run routing
 }
 
+const app = express() 
+
+app.use('/api/',apiRoute)
+
 const server = http.createServer(async (req,res) => { 
 
     if(!handleCors(req,res)) return; 
 
     const url = req.url;  
+
+    if (req.url?.startsWith('/api/')) {
+       app(req, res);
+       return; // stop here
+    }
     
 
     if(req.method === 'POST' && req.url === '/login')
