@@ -1,17 +1,13 @@
 import { Router } from "express";
 import conn from "../db/connection.js";
 import productController from "../controllers/productController.js";
+import multer from "multer";
+
 
 const router = Router();
+const upload = multer();
 
-// router.get('/products', async (req, res) => {
-//   try {
-//     const rows = await conn.query(`SELECT * FROM products`);
-//     res.status(200).send(rows[0]);
-//   } catch (error) {
-//     res.status(500).send({ error: 'something blew up' })
-//   }
-// }) 
-router.get('/products',productController.show)
+router.get('/products',productController.show); 
+router.post('/products', upload.none(), productController.store);
 
 export default router;
