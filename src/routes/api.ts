@@ -1,17 +1,34 @@
 import { Router } from "express";
-import conn from "../db/connection.js";
 import productController from "../controllers/productController.js";
+import multer from "multer"; 
+import path from "node:path"; 
+import fs from 'node:fs'; 
 
-const router = Router();
 
-// router.get('/products', async (req, res) => {
-//   try {
-//     const rows = await conn.query(`SELECT * FROM products`);
-//     res.status(200).send(rows[0]);
-//   } catch (error) {
-//     res.status(500).send({ error: 'something blew up' })
-//   }
-// }) 
-router.get('/products',productController.show)
+const router = Router(); 
+
+const folderPath = "uploads/";
+
+if (!fs.existsSync(folderPath)) {
+  fs.mkdirSync(folderPath);
+}
+
+const storage = multer.diskStorage({ 
+  destination: (req, file, cb) => { 
+    cb(null, folderPath);
+  },
+
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueName = Date.now() + "_" + Math.random().toString(36).substring(2);
+
+    cb(null, uniqueName + ext);
+  }
+}); 
+
+const upload = multer({storage}); 
+
+router.get('/products',productController.show); 
+router.post('/products', upload.single('image'), productController.store);
 
 export default router;

@@ -26,7 +26,7 @@ function handleCors(req:any, res:any) {
 }
 
 const app = express() 
-
+app.use(express.json())
 app.use('/api/',apiRoute)
 
 const server = http.createServer(async (req,res) => { 
@@ -75,36 +75,22 @@ const server = http.createServer(async (req,res) => {
         }
          
     } 
-    
 
-    if(req.method === 'GET' && url === '/products') 
-    {
-        try {
-        const [rows] = await pool.query("SELECT * FROM products");
-        res.end(JSON.stringify(rows));
-        return;
-        } catch (err) {
-            console.error("Errore DB:", err);
-            res.statusCode = 500;
-            res.end("Errore DB");
-        }
-    }
+    // if(req.method === 'POST' && url === '/products') 
+    // {   
+    //     let data = "";
 
-    if(req.method === 'POST' && url === '/products') 
-    {   
-        let data = "";
+    //     req.on("data", chunk => data += chunk);
+    //     req.on("end", async () => {
+    //     const {title}  = JSON.parse(data);
 
-        req.on("data", chunk => data += chunk);
-        req.on("end", async () => {
-        const {title}  = JSON.parse(data);
+    //     await pool.query("INSERT INTO products (title) VALUES (?)",[title]);
 
-        await pool.query("INSERT INTO products (title) VALUES (?)",[title]);
-
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({"message":"ok"}));
-        }); 
-        return;
-    }   
+    //     res.writeHead(200, { "Content-Type": "application/json" });
+    //     res.end(JSON.stringify({"message":"ok"}));
+    //     }); 
+    //     return;
+    // }   
     
     if(req.method === 'GET' && url?.startsWith('/products/')) 
     {    

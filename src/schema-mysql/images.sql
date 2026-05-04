@@ -1,13 +1,13 @@
 CREATE DATABASE IF NOT EXISTS manage;
-DROP TABLE IF EXISTS products; 
+DROP TABLE IF EXISTS product_images; 
 
-CREATE TABLE products (
+CREATE TABLE product_images (
   id integer PRIMARY KEY AUTO_INCREMENT,
-  title VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NULL,
   created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO products (title)
+INSERT INTO product_images (name)
 VALUES 
 ('My First Note'),
 ('My Second Note');
