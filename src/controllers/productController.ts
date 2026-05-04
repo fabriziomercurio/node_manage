@@ -1,6 +1,8 @@
 
 import { Request, Response } from 'express'; 
-import conn from '../db/connection.js';  
+import conn from '../db/connection.js'; 
+import fs from 'node:fs'; 
+import {withTransaction}  from '../db/wrappers/transaction.js';
 
 const productController = {
     async show(req:Request,res:Response) 
@@ -11,19 +13,30 @@ const productController = {
          } catch (err) {
             res.status(500).send({ error: err })
          }
-    }, 
+    },   
 
-    async store(req:Request,res:Response) 
-    {           
-      try {        
-          const {title} = req.body; 
-          await conn.query(`INSERT INTO products (title) VALUES (?)`, [title]); 
-          res.send(JSON.stringify(req.body))
-       } catch (err) {
-           return res.status(500).json({
-               error: err 
-           });
-       }
+    async store(req: Request, res: Response) {
+
+        const filename = req.file?.filename;
+        const file = req.file;
+
+        try {
+            const { title } = req.body;
+            await withTransaction(async (db: any) => { 
+
+                if (filename) await db.query(`INSERT INTO product_images (name) VALUES (?)`, [filename]);
+
+                await db.query(`INSERT INTO products (title) VALUES (?)`, [title]);
+            });
+
+            res.send(JSON.stringify({ message: "record insert with success" })); 
+        } catch (err: any) {
+            if (file) fs.unlinkSync(file.path);
+            return res.status(500).json({
+                error: err.message
+            });
+        }
+
     }
 } 
 
