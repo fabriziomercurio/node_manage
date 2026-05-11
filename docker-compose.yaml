@@ -17,3 +17,11 @@ services:
       - ./storage/dbdata:/var/lib/mysql
     ports: 
       - 3360:3306
+  
+  mongo:
+    image: mongo:7
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./storage/mongo:/data/db

@@ -4,9 +4,23 @@ import conn from '../db/connection.js';
 import fs from 'node:fs'; 
 import {withTransaction}  from '../db/wrappers/transaction.js'; 
 import sharp from "sharp";
-import path from 'node:path';
+import path from 'node:path'; 
+import { MongoClient } from "mongodb";
 
-const productController = {
+const client = new MongoClient("mongodb://mongo:27017");
+
+let mongoDb: any;
+
+export async function getMongo() {
+    if (!mongoDb) {
+        await client.connect();
+        mongoDb = client.db("app_logs");
+        console.log("Mongo connected");
+    }
+    return mongoDb;
+}
+
+const productController = { 
     async show(req:Request,res:Response) 
     {
       try {
@@ -17,14 +31,16 @@ const productController = {
          }
     },   
 
-    async store(req: Request, res: Response) {
+    async store(req: Request, res: Response) { 
+
+   
 
     const file = req.file;
 
     try {
         const { title } = req.body;
 
-        await withTransaction(async (db: any) => {
+        const result = await withTransaction(async (db: any) => {
 
             if (!file) { await db.query(`INSERT INTO products (title) VALUES (?)`,[title]);
                 return;
@@ -94,14 +110,33 @@ const productController = {
                 [`${base}.jpg`]
             );
 
-            const imageId = img.insertId;
+            const imageId = (img as any).insertId;
 
             const [result] = await db.query(
                 `INSERT INTO products (title, imageId) VALUES (?,?)`,
                 [title,imageId]
-            );
+            ); 
 
-        });
+            return {
+                imageId,
+                productId: 'testing'
+            }; 
+
+        }); 
+
+
+        const mongoDb = await getMongo();
+
+            const r = await mongoDb.collection("audit_logs").insertOne({
+                action: "PRODUCT_CREATED",
+                title,
+                imageId:result.imageId,
+                createdAt: new Date()
+            });
+
+
+console.log("MONGO INSERT RESULT:", r);
+
 
         res.send({ message: "record insert with success" });
 
