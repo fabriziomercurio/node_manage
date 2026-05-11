@@ -4,6 +4,7 @@ import conn from '../db/connection.js';
 import fs from 'node:fs'; 
 import {withTransaction}  from '../db/wrappers/transaction.js'; 
 import sharp from "sharp";
+import path from 'node:path';
 
 const productController = {
     async show(req:Request,res:Response) 
@@ -18,37 +19,99 @@ const productController = {
 
     async store(req: Request, res: Response) {
 
-        const filename = req.file?.filename;
+    const file = req.file;
 
-        try {
-            const { title } = req.body; 
+    try {
+        const { title } = req.body;
 
-             await withTransaction(async (db: any) => { 
+        await withTransaction(async (db: any) => {
 
-                if (filename) { 
-                    
-                    await sharp(`uploads/${filename}`)
-                    .resize({ height: 100 })
-                    .toFile(`uploads/min/${filename}`); 
+            if (!file) { await db.query(`INSERT INTO products (title) VALUES (?)`,[title]);
+                return;
+            }
 
-                    const [result] = await db.query(`INSERT INTO product_images (name) VALUES (?)`, [filename]); 
+            const input = file.buffer;
+            const filename = file.originalname;
+            const extension = path.extname(filename).toLowerCase();
 
-                    const imageId = result.insertId;
+            const base = Date.now() + "_" + Math.random().toString(36).substring(2);
 
-                    await db.query(`INSERT INTO products (title,imageId) VALUES (?,?)`, [title,imageId]);
-                }else{
-                    await db.query(`INSERT INTO products (title) VALUES (?)`, [title]);
-                }                      
-            });  
+            const ensureDir = (dir: string) => {
+                if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir, { recursive: true });
+                }
+            };
 
-            res.send({ message: "record insert with success" }); 
-        } catch (err: any) {
-            if (req.file?.path) fs.unlinkSync(req.file.path);
-            return res.status(500).json({
-                error: err.message
-            });
-        }
+            const originalDir = path.join("uploads", "original");
+            ensureDir(originalDir);
+
+            const originalPath = path.join(originalDir, `${base}.webp`);
+
+            await sharp(input)
+                .resize({ width: 1600 }) 
+                .webp({
+                    quality: 80,
+                    alphaQuality: 100
+                })
+                .toFile(originalPath);
+
+            const sizes = [
+                { name: "min", size: 400 },
+                { name: "medium", size: 800 }
+            ];
+
+            for (const e of sizes) {
+
+                const dir = path.join("uploads", e.name);
+                ensureDir(dir);
+
+                const pipeline = sharp(input).resize({
+                    height: e.size,
+                    withoutEnlargement: true
+                });
+
+                if (extension === ".jpg" || extension === ".jpeg") {
+
+                    await pipeline
+                        .jpeg({ quality: 70 })
+                        .toFile(path.join(dir, `${base}.jpg`));
+
+                } else if (extension === ".png") {
+
+                    await pipeline
+                        .webp({ quality: 75 })
+                        .toFile(path.join(dir, `${base}.webp`));
+
+                } else {
+
+                    throw new Error("format not valid");
+                }
+
+            }
+
+            const [img] = await db.query(
+                `INSERT INTO product_images (name) VALUES (?)`,
+                [`${base}.jpg`]
+            );
+
+            const imageId = img.insertId;
+
+            const [result] = await db.query(
+                `INSERT INTO products (title, imageId) VALUES (?,?)`,
+                [title,imageId]
+            );
+
+        });
+
+        res.send({ message: "record insert with success" });
+
+    } catch (err: any) {
+
+        return res.status(500).json({
+            error: err.message
+        });
     }
+  }
 } 
 
 export default productController; 

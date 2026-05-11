@@ -1,4 +1,8 @@
 /node_modules 
 /dist
 storage
+
 uploads/*
+!uploads/original/
+uploads/original/*
+!uploads/original/.gitkeep
