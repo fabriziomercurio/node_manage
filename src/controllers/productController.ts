@@ -19,33 +19,35 @@ const productController = {
     async store(req: Request, res: Response) {
 
         const filename = req.file?.filename;
-        const file = req.file;
-
-        res.send(JSON.stringify({ message: req.file })); 
 
         try {
             const { title } = req.body; 
 
-            await sharp("uploads/"+req.file?.filename)
-               .resize({ height: 100 })
-                .toFile("uploads/min/"+req.file?.filename);
+             await withTransaction(async (db: any) => { 
 
+                if (filename) { 
+                    
+                    await sharp(`uploads/${filename}`)
+                    .resize({ height: 100 })
+                    .toFile(`uploads/min/${filename}`); 
 
-            await withTransaction(async (db: any) => { 
+                    const [result] = await db.query(`INSERT INTO product_images (name) VALUES (?)`, [filename]); 
 
-                if (req.file?.filename) await db.query(`INSERT INTO product_images (name) VALUES (?)`, [req.file?.filename]); 
+                    const imageId = result.insertId;
 
-                await db.query(`INSERT INTO products (title) VALUES (?)`, [title]);
+                    await db.query(`INSERT INTO products (title,imageId) VALUES (?,?)`, [title,imageId]);
+                }else{
+                    await db.query(`INSERT INTO products (title) VALUES (?)`, [title]);
+                }                      
             });  
 
-            res.send(JSON.stringify({ message: "record insert with success" })); 
+            res.send({ message: "record insert with success" }); 
         } catch (err: any) {
-            if (req.file) fs.unlinkSync(req.file.path);
+            if (req.file?.path) fs.unlinkSync(req.file.path);
             return res.status(500).json({
                 error: err.message
             });
         }
-
     }
 } 
 

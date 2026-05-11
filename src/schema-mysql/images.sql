@@ -11,3 +11,5 @@ INSERT INTO product_images (name)
 VALUES 
 ('My First Note'),
 ('My Second Note');
+
+
