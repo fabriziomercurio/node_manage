@@ -5,4 +5,6 @@ storage
 uploads/*
 !uploads/original/
 uploads/original/*
-!uploads/original/.gitkeep
+!uploads/original/.gitkeep 
+
+logs/*

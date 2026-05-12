@@ -31,9 +31,7 @@ const productController = {
          }
     },   
 
-    async store(req: Request, res: Response) { 
-
-   
+    async store(req: Request, res: Response) {   
 
     const file = req.file;
 
@@ -43,7 +41,9 @@ const productController = {
         const result = await withTransaction(async (db: any) => {
 
             if (!file) { await db.query(`INSERT INTO products (title) VALUES (?)`,[title]);
-                return;
+                return {
+                productId: 'testing'
+              };
             }
 
             const input = file.buffer;
@@ -61,15 +61,22 @@ const productController = {
             const originalDir = path.join("uploads", "original");
             ensureDir(originalDir);
 
-            const originalPath = path.join(originalDir, `${base}.webp`);
-
-            await sharp(input)
+            const pipeline = sharp(input)
                 .resize({ width: 1600 }) 
-                .webp({
-                    quality: 80,
-                    alphaQuality: 100
-                })
-                .toFile(originalPath);
+                if (extension === '.jpeg' || extension === '.jpg') { 
+                    await pipeline
+                        .jpeg({ quality: 70 })
+                        .toFile(path.join(originalDir, `${base}.jpg`));
+                    
+                } else if (extension === ".png") {
+
+                    await pipeline
+                        .webp({ quality: 75 })
+                        .toFile(path.join(originalDir, `${base}.webp`));
+                } else {
+
+                    throw new Error("format not valid");
+                }
 
             const sizes = [
                 { name: "min", size: 400 },
@@ -127,15 +134,25 @@ const productController = {
 
         const mongoDb = await getMongo();
 
-            const r = await mongoDb.collection("audit_logs").insertOne({
+            const auditLog = {
                 action: "PRODUCT_CREATED",
                 title,
                 imageId:result.imageId,
                 createdAt: new Date()
+            }; 
+
+            await mongoDb.collection("audit_logs").insertOne(auditLog);
+
+            if (!fs.existsSync('./logs')) {
+              fs.mkdirSync('./logs');
+            }
+
+            fs.appendFile(`./logs/audit.log`, JSON.stringify(auditLog) + '\n', (err) => {
+                if (err) throw err;
+                console.log('The "data to append" was appended to file!');
             });
 
-
-console.log("MONGO INSERT RESULT:", r);
+        console.log("MONGO INSERT RESULT:", auditLog);
 
 
         res.send({ message: "record insert with success" });
