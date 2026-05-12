@@ -1,7 +1,8 @@
 import http from "node:http";  
 import mysql from "mysql2/promise"; 
-import express from 'express'
-import apiRoute from './routes/api.js'
+import express from 'express';
+import apiRoute from './routes/api.js';
+import cors from 'cors';
 
 const pool = mysql.createPool({
   host: 'db',
@@ -11,27 +12,31 @@ const pool = mysql.createPool({
   password: 'root',
 }); 
 
-function handleCors(req:any, res:any) {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5000");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+// function handleCors(req:any, res:any) {
+//   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5000");
+//   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return false; // block routing
-  }
+//   if (req.method === "OPTIONS") {
+//     res.writeHead(204);
+//     res.end();
+//     return false; // block routing
+//   }
 
-  return true; // eaves to run routing
-}
+//   return true; // eaves to run routing
+// }
 
 const app = express() 
+app.use(cors({
+  origin: 'http://localhost:5000'
+}));
 app.use(express.json())
+app.use(express.static('uploads'))
 app.use('/api/',apiRoute)
 
 const server = http.createServer(async (req,res) => { 
 
-    if(!handleCors(req,res)) return; 
+    // if(!handleCors(req,res)) return; 
 
     const url = req.url;  
 
@@ -74,40 +79,23 @@ const server = http.createServer(async (req,res) => {
             res.end("Errore DB");
         }
          
-    } 
-
-    // if(req.method === 'POST' && url === '/products') 
-    // {   
-    //     let data = "";
-
-    //     req.on("data", chunk => data += chunk);
-    //     req.on("end", async () => {
-    //     const {title}  = JSON.parse(data);
-
-    //     await pool.query("INSERT INTO products (title) VALUES (?)",[title]);
-
-    //     res.writeHead(200, { "Content-Type": "application/json" });
-    //     res.end(JSON.stringify({"message":"ok"}));
-    //     }); 
-    //     return;
-    // }   
+    }   
     
-    if(req.method === 'GET' && url?.startsWith('/products/')) 
-    {    
-       try {
-        const id = url.split('/')[2];
-        const [row] = await pool.query("SELECT * FROM products WHERE id = ?",[id]); 
-        const record = (row as any[])[0]; 
-        res.write(JSON.stringify(record));
-        res.end(); 
-        return;
-        } catch (error) {
-            console.error("Errore DB:", error);
-            res.statusCode = 500;
-            res.end("Errore DB");
-        }
-
-    }
+    // if(req.method === 'GET' && url?.startsWith('/products/')) 
+    // {    
+    //    try {
+    //     const id = url.split('/')[2];
+    //     const [row] = await pool.query("SELECT * FROM products WHERE id = ?",[id]); 
+    //     const record = (row as any[])[0]; 
+    //     res.write(JSON.stringify(record));
+    //     res.end(); 
+    //     return;
+    //     } catch (error) {
+    //         console.error("Errore DB:", error);
+    //         res.statusCode = 500;
+    //         res.end("Errore DB");
+    //     }
+    // }
 
     if(req.method === 'DELETE' && url?.startsWith('/products/')) 
     {    
@@ -158,14 +146,9 @@ const server = http.createServer(async (req,res) => {
         res.end("Not found");
     }  
 
-    
-
-    
-
-   
 }) 
 
-server.listen(3000);
+app.listen(3000);
 
 
 

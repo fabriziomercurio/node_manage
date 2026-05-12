@@ -16,6 +16,7 @@ if (!fs.existsSync(folderPath)) {
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/products',productController.show); 
-router.post('/products', upload.single('image'), productController.store);
+router.post('/products', upload.single('image'), productController.store); 
+router.get('/products/:productId',productController.edit);
 
 export default router;

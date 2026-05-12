@@ -20,7 +20,11 @@ export async function getMongo() {
     return mongoDb;
 }
 
+const sizeImg:string[] = ['original', 'medium', 'min'];
+
 const productController = { 
+     
+
     async show(req:Request,res:Response) 
     {
       try {
@@ -29,7 +33,34 @@ const productController = {
          } catch (err) {
             res.status(500).send({ error: err })
          }
-    },   
+    }, 
+    
+    async edit(req:Request,res:Response) 
+    {       
+        try { 
+            const id = req.params.productId; 
+            const [result]:any = 
+            await conn.query(`SELECT title,name,imageId,product_images.created FROM products 
+                INNER JOIN product_images ON product_images.id = products.imageId WHERE products.id = ?`, [id]);  
+
+            if (!result || result.length === 0) res.status(404).json({message:`Record not found`});
+            
+            
+            const created = result[0]?.created; 
+            
+            result[0].created = new Date(created).toISOString().split("T")[0]; //overwritten created field 
+
+                res.status(200).json({
+                    result: result[0],
+                    sizes:sizeImg
+                });
+
+        } catch (err) {
+            return res.status(500).json({
+                message: err instanceof Error ? err.message : "Unknown error"
+            });
+        }       
+    },
 
     async store(req: Request, res: Response) {   
 
@@ -58,7 +89,11 @@ const productController = {
                 }
             };
 
-            const originalDir = path.join("uploads", "original");
+            const d = new Date();
+
+            const formatted:any = d.toISOString().split('T')[0];
+
+            const originalDir = path.join("uploads", formatted, "original");
             ensureDir(originalDir);
 
             const pipeline = sharp(input)
@@ -85,7 +120,7 @@ const productController = {
 
             for (const e of sizes) {
 
-                const dir = path.join("uploads", e.name);
+                const dir = path.join("uploads", formatted ,e.name);
                 ensureDir(dir);
 
                 const pipeline = sharp(input).resize({
@@ -112,9 +147,14 @@ const productController = {
 
             }
 
+
+            //check if image ending with png and convert in webp and save it in table
+            const isPng = file.mimetype === 'image/png';
+            const ext = isPng ? 'webp' : 'jpg'; 
+
             const [img] = await db.query(
                 `INSERT INTO product_images (name) VALUES (?)`,
-                [`${base}.jpg`]
+                [`${base}.${ext}`]
             );
 
             const imageId = (img as any).insertId;
@@ -163,7 +203,22 @@ const productController = {
             error: err.message
         });
     }
+  }, 
+
+  ////////////// update 
+  // invio immagine da zero 
+  // se l'immagine è sempre la stessa non modifico nulla 
+  // l'immagine è diversa, modifico la tabella e sostituisco l'immagine nel filesystem 
+    // la ricerca dell'immagine avverrà per data e stringa univoca 
+  // eliminazione immagine 
+  // se le cartelle sono vuote vanno automaticamente eliminate 
+  // audit log insert e update
+
+  async update(req: Request, res: Response) 
+  {
+          
   }
+
 } 
 
 export default productController; 
