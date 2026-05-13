@@ -1,7 +1,7 @@
 import { Router } from "express";
-import productController from "../controllers/productController.js";
+import productController from "../controllers/productController.js"; 
+import loginController from "../controllers/loginController.js";
 import multer from "multer"; 
-import path from "node:path"; 
 import fs from 'node:fs'; 
 
 
@@ -18,5 +18,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/products',productController.show); 
 router.post('/products', upload.single('image'), productController.store); 
 router.get('/products/:productId',productController.edit);
+router.put('/product/:productId',productController.update); 
+
+router.post('/login',loginController.login);
 
 export default router;

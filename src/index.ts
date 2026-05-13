@@ -12,20 +12,6 @@ const pool = mysql.createPool({
   password: 'root',
 }); 
 
-// function handleCors(req:any, res:any) {
-//   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5000");
-//   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-//   if (req.method === "OPTIONS") {
-//     res.writeHead(204);
-//     res.end();
-//     return false; // block routing
-//   }
-
-//   return true; // eaves to run routing
-// }
-
 const app = express() 
 app.use(cors({
   origin: 'http://localhost:5000'
@@ -36,66 +22,12 @@ app.use('/api/',apiRoute)
 
 const server = http.createServer(async (req,res) => { 
 
-    // if(!handleCors(req,res)) return; 
-
     const url = req.url;  
 
     if (req.url?.startsWith('/api/')) {
        app(req, res);
        return; // stop here
     }
-    
-
-    if(req.method === 'POST' && req.url === '/login')
-    {
-        try {
-            let data = "";
-
-            req.on("data", chunk => data += chunk);
-            req.on("end", async () => {
-                 
-                const {email, password} = JSON.parse(data);
-                const [rows] = await pool.query<any[]>("SELECT * FROM users WHERE email = ? ", [email]); 
-                
-                const user = rows[0];             
-
-                if(!user) 
-                {
-                    res.end(JSON.stringify({"message":"user not found"}));
-                    return
-                } 
-
-                if (user.password === password) {
-                    res.end(JSON.stringify({"message":"you're logged","fake-token":"fake-token0123456789"}));
-                    return
-                } 
-                
-                res.end(JSON.stringify({"message":"password incorrect"}));
-            }); 
-            return;
-        } catch (err) {
-            console.error("Errore DB:", err);
-            res.statusCode = 500;
-            res.end("Errore DB");
-        }
-         
-    }   
-    
-    // if(req.method === 'GET' && url?.startsWith('/products/')) 
-    // {    
-    //    try {
-    //     const id = url.split('/')[2];
-    //     const [row] = await pool.query("SELECT * FROM products WHERE id = ?",[id]); 
-    //     const record = (row as any[])[0]; 
-    //     res.write(JSON.stringify(record));
-    //     res.end(); 
-    //     return;
-    //     } catch (error) {
-    //         console.error("Errore DB:", error);
-    //         res.statusCode = 500;
-    //         res.end("Errore DB");
-    //     }
-    // }
 
     if(req.method === 'DELETE' && url?.startsWith('/products/')) 
     {    
@@ -114,8 +46,7 @@ const server = http.createServer(async (req,res) => {
             await pool.query("UPDATE products SET title = ? WHERE id = ?",[title,id]);
             res.end("record with id: " + id + " updated");
         })       
-    }   
-    
+    }       
     
 
     if (req.method === 'POST' && req.url === '/users') {

@@ -22,8 +22,7 @@ export async function getMongo() {
 
 const sizeImg:string[] = ['original', 'medium', 'min'];
 
-const productController = { 
-     
+const productController = {     
 
     async show(req:Request,res:Response) 
     {
@@ -206,7 +205,10 @@ const productController = {
   }, 
 
   ////////////// update 
-  // invio immagine da zero 
+  //verificare se id esiste 
+  // invio immagine da zero => verifico se immagine è stata inviata e se il campo 
+     // + foreign key è null 
+
   // se l'immagine è sempre la stessa non modifico nulla 
   // l'immagine è diversa, modifico la tabella e sostituisco l'immagine nel filesystem 
     // la ricerca dell'immagine avverrà per data e stringa univoca 
@@ -216,7 +218,9 @@ const productController = {
 
   async update(req: Request, res: Response) 
   {
-          
+    const id = req.params.productId; 
+    const title = req.body.title; 
+    res.status(200).json(id);
   }
 
 } 
