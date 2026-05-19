@@ -1,4 +1,4 @@
-PUT http://localhost:3000/api/product/
+PUT http://localhost:3000/api/product/18
 Content-Type: application/json 
 
 {

@@ -38,7 +38,7 @@ const productController = {
     async edit(req:Request,res:Response) 
     {       
         try { 
-            const id = req.params.productId;
+            const id = req.params.productId; 
             
             const [record]:any = await conn.query(`SELECT id,title,imageId FROM products WHERE products.id = ?`, [id]); 
 
@@ -208,25 +208,58 @@ const productController = {
   },
 
   ////////////// update 
-  //verificare se id esiste 
-  // invio immagine da zero => verifico se immagine è stata inviata e se il campo 
-     // + foreign key è null 
+   
+  // invio immagine da zero ma su un record esistente => verifico se immagine è stata inviata e se il campo 
+     // + foreign key è null ATTENZIONE: posso modificare anche solo il record ma senza immagine
+ // ***** ricontrollare lo store
 
-  // se l'immagine è sempre la stessa non modifico nulla 
-  // l'immagine è diversa, modifico la tabella e sostituisco l'immagine nel filesystem 
-    // la ricerca dell'immagine avverrà per data e stringa univoca 
+
+  // l'immagine è diversa, modifico la tabella e sostituisco l'immagine nel filesystem
+ // la ricerca dell'immagine avverrà per data e stringa univoca 
+
   // eliminazione immagine 
   // se le cartelle sono vuote vanno automaticamente eliminate 
   // audit log insert e update
 
   async update(req: Request, res: Response) 
   {
-    const id = req.params.productId; 
-    const title = req.body.title; 
-    res.status(200).json(id);
-  }
+    // return res.status(200).json({message:req.body.title}); 
+   
+     try { 
+   
+     const id = req.params.productId;
+     const title = req.body.title;
 
-} 
+     const file = req.file; 
+
+     const [row]:any = await conn.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
+     if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
+
+     if (!file) {
+        await conn.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
+        return res.status(200).json({message:`Record Updated`}); 
+     } 
+
+     if (file && row[0].imageId === null) { 
+        const result = await productController.loadImage();
+        // await conn.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
+       return res.status(200).json({message:result});
+         return res.status(200).json({message:`Record and Image Updated`}); 
+     }
+
+     } catch (error) {
+          return res.status(500).json({
+                 message: error instanceof Error ? error.message : "Unknown error"
+             });
+     }
+  },
+
+   loadImage: async () => {
+     return "loadImage";
+   }
+}
+
+
 
 export default productController; 
 
