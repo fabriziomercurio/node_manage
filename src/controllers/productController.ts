@@ -77,8 +77,130 @@ const productController = {
                 productId: 'testing'
               };
             }
+            
+            const image = await productController.loadImage(file,writtenFiles); 
 
-            const input = file.buffer;
+            const [img] = await db.query(
+                `INSERT INTO product_images (name) VALUES (?)`,
+                [image.filename]
+            ); 
+
+            const imageId = (img as any).insertId;
+
+            await db.query(
+                `INSERT INTO products (title, imageId) VALUES (?,?)`,
+                [title,imageId]
+            ); 
+
+            return {
+                imageId,
+                productId: 'testing'
+            }; 
+        }); 
+
+        const mongoDb = await getMongo();
+
+            const auditLog = {
+                action: "PRODUCT_CREATED",
+                title,
+                imageId:result.imageId,
+                createdAt: new Date()
+            }; 
+
+            await mongoDb.collection("audit_logs").insertOne(auditLog);
+
+            if (!fs.existsSync('./logs')) {
+              fs.mkdirSync('./logs', { recursive: true });
+            }
+
+            fs.appendFile(`./logs/audit.log`, JSON.stringify(auditLog) + '\n', 
+            (err) => {
+                if (err) {
+                    console.error(err)
+                };
+            }
+        );
+
+        console.log("MONGO INSERT RESULT:", auditLog);
+
+        return res.send({ message: "record insert with success" });
+
+    } catch (err: any) {
+        for (const f of writtenFiles) {
+            fs.unlinkSync(f);
+        }
+        return res.status(500).json({
+            error: err.message
+        });
+    }
+  },
+
+  ////////////// update 
+   
+  // invio immagine da zero ma su un record esistente => verifico se immagine è stata inviata e se il campo 
+     // + foreign key è null ATTENZIONE: posso modificare anche solo il record ma senza immagine
+ // ***** ricontrollare lo store
+
+
+  // l'immagine è diversa, modifico la tabella e sostituisco l'immagine nel filesystem
+ // la ricerca dell'immagine avverrà per data e stringa univoca 
+
+  // eliminazione immagine 
+  // se le cartelle sono vuote vanno automaticamente eliminate 
+  // audit log insert e update
+
+  async update(req: Request, res: Response) 
+  {
+    const writtenFiles: string[] = [];
+    try { 
+   
+     const id = req.params.productId;
+     const title = req.body.title;
+
+     const file = req.file; 
+
+     const result = await withTransaction(async (db: any) => {
+
+     const [row]:any = await conn.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
+     if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
+
+     if (!file) {
+        await conn.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
+        return res.status(200).json({message:`Record Updated`}); 
+     } 
+
+     if (file && row[0].imageId === null) { 
+
+        const image = await productController.loadImage(file,writtenFiles);
+
+        const [img] = await db.query(
+                `INSERT INTO product_images (name) VALUES (?)`,
+                [image.filename]
+            ); 
+
+         const imageId = (img as any).insertId; 
+
+         await db.query(
+                `UPDATE products SET title = ?, imageId = ? WHERE id = ?`,
+                [title,imageId,id]
+            );
+
+            return {
+                imageId,
+                productId: 'testing'
+            }; 
+       }
+    });
+
+     } catch (error) {
+          return res.status(500).json({
+                 message: error instanceof Error ? error.message : "Unknown error"
+             });
+     }
+  },
+  
+   loadImage: async (file: Express.Multer.File, writtenFiles:string[]) => {
+    const input = file.buffer;
             const filename = file.originalname;
             const extension = path.extname(filename).toLowerCase();
 
@@ -150,113 +272,13 @@ const productController = {
                 }
             }
 
-            const ext = extension === '.png' ? 'webp' : 'jpg';
-
-            const [img] = await db.query(
-                `INSERT INTO product_images (name) VALUES (?)`,
-                [`${base}.${ext}`]
-            );
-
-            const imageId = (img as any).insertId;
-
-            await db.query(
-                `INSERT INTO products (title, imageId) VALUES (?,?)`,
-                [title,imageId]
-            ); 
+            const ext = extension === '.png' ? 'webp' : 'jpg'; 
 
             return {
-                imageId,
-                productId: 'testing'
-            }; 
-        }); 
-
-        const mongoDb = await getMongo();
-
-            const auditLog = {
-                action: "PRODUCT_CREATED",
-                title,
-                imageId:result.imageId,
-                createdAt: new Date()
-            }; 
-
-            await mongoDb.collection("audit_logs").insertOne(auditLog);
-
-            if (!fs.existsSync('./logs')) {
-              fs.mkdirSync('./logs', { recursive: true });
+                filename: `${base}.${ext}`
             }
-
-            fs.appendFile(`./logs/audit.log`, JSON.stringify(auditLog) + '\n', 
-            (err) => {
-                if (err) {
-                    console.error(err)
-                };
-            }
-        );
-
-        console.log("MONGO INSERT RESULT:", auditLog);
-
-        return res.send({ message: "record insert with success" });
-
-    } catch (err: any) {
-        for (const f of writtenFiles) {
-            fs.unlinkSync(f);
-        }
-        return res.status(500).json({
-            error: err.message
-        });
-    }
-  },
-
-  ////////////// update 
-   
-  // invio immagine da zero ma su un record esistente => verifico se immagine è stata inviata e se il campo 
-     // + foreign key è null ATTENZIONE: posso modificare anche solo il record ma senza immagine
- // ***** ricontrollare lo store
-
-
-  // l'immagine è diversa, modifico la tabella e sostituisco l'immagine nel filesystem
- // la ricerca dell'immagine avverrà per data e stringa univoca 
-
-  // eliminazione immagine 
-  // se le cartelle sono vuote vanno automaticamente eliminate 
-  // audit log insert e update
-
-  async update(req: Request, res: Response) 
-  {
-    // return res.status(200).json({message:req.body.title}); 
-   
-     try { 
-   
-     const id = req.params.productId;
-     const title = req.body.title;
-
-     const file = req.file; 
-
-     const [row]:any = await conn.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
-     if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
-
-     if (!file) {
-        await conn.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
-        return res.status(200).json({message:`Record Updated`}); 
-     } 
-
-     if (file && row[0].imageId === null) { 
-        const result = await productController.loadImage();
-        // await conn.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
-       return res.status(200).json({message:result});
-         return res.status(200).json({message:`Record and Image Updated`}); 
-     }
-
-     } catch (error) {
-          return res.status(500).json({
-                 message: error instanceof Error ? error.message : "Unknown error"
-             });
-     }
-  },
-
-   loadImage: async () => {
-     return "loadImage";
    }
+   
 }
 
 
