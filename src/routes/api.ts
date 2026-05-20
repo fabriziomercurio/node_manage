@@ -19,7 +19,7 @@ router.get('/products',productController.show);
 router.post('/products', upload.single('image'), productController.store); 
 router.get('/products/:productId',validateID('productId'),productController.edit); 
 router.put('/product/:productId',validateID('productId'), upload.single('image'),productController.update); 
-
+router.delete('/product/:productId',validateID('productId'),productController.delete)
 
 router.post('/login',loginController.login);
 

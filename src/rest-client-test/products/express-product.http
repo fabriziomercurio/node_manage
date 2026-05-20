@@ -1,6 +1,4 @@
-PUT http://localhost:3000/api/product/18
+DELETE http://localhost:3000/api/product/16
 Content-Type: application/json 
 
-{
-    "title":"testing title update"
-}
+

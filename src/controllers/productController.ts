@@ -136,24 +136,14 @@ const productController = {
   },
 
   ////////////// update 
-   
-  // invio immagine da zero ma su un record esistente => verifico se immagine è stata inviata e se il campo 
-     // + foreign key è null ATTENZIONE: posso modificare anche solo il record ma senza immagine
- // ***** ricontrollare lo store
-
-
-  // l'immagine è diversa, modifico la tabella e sostituisco l'immagine nel filesystem
- // la ricerca dell'immagine avverrà per data e stringa univoca 
-
-  // eliminazione immagine 
-  // se le cartelle sono vuote vanno automaticamente eliminate 
-  // audit log insert e update
+  // aggiornamento immagine e cancella quella precedentemente salvata  
 
   async update(req: Request, res: Response) 
   {
+    
     const writtenFiles: string[] = [];
     try { 
-   
+     
      const id = req.params.productId;
      const title = req.body.title;
 
@@ -161,11 +151,12 @@ const productController = {
 
      const result = await withTransaction(async (db: any) => {
 
-     const [row]:any = await conn.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
+     const [row]:any = await db.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
+      
      if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
 
      if (!file) {
-        await conn.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
+        await db.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
         return res.status(200).json({message:`Record Updated`}); 
      } 
 
@@ -189,7 +180,19 @@ const productController = {
                 imageId,
                 productId: 'testing'
             }; 
-       }
+       } 
+
+        if (file && row[0].imageId != null) { 
+        const image = await productController.loadImage(file,writtenFiles); 
+        await db.query(
+             `UPDATE products SET title = ? WHERE id = ?`,
+             [title,id]);
+        await db.query(
+             `UPDATE product_images SET name = ? WHERE id = ?`,
+             [image.filename,row[0].imageId]);
+        return res.status(200).json({message:`Record Updated`});
+       } 
+
     });
 
      } catch (error) {
@@ -198,7 +201,7 @@ const productController = {
              });
      }
   },
-  
+
    loadImage: async (file: Express.Multer.File, writtenFiles:string[]) => {
     const input = file.buffer;
             const filename = file.originalname;
@@ -277,6 +280,39 @@ const productController = {
             return {
                 filename: `${base}.${ext}`
             }
+   }, 
+   
+  // eliminazione immagine 
+  // se le cartelle sono vuote vanno automaticamente eliminate
+
+   async delete(req: Request, res:Response) 
+   {     
+      try {
+        const id = req.params.productId; 
+
+        await withTransaction(async (db: any) => {  
+
+        const [row]:any = await db.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
+      
+        if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
+
+        if (row[0].imageId) { 
+            await db.query("UPDATE products SET imageId = NULL WHERE id = ?",[id]);
+            await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);  
+        }
+
+        await db.query("DELETE FROM products WHERE id = ?",[id]);
+        }); 
+
+        return res.status(200).json({
+            message: "record deleted"
+        });
+        
+      } catch (error) {
+        return res.status(500).json({
+                 error: error instanceof Error ? error.message : "Unknown error"
+             });
+      }
    }
    
 }
