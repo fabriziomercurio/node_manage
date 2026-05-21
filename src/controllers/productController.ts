@@ -140,7 +140,9 @@ const productController = {
 
   async update(req: Request, res: Response) 
   {
-    
+    let name:string | undefined; 
+    let date:string | undefined; 
+
     const writtenFiles: string[] = [];
     try { 
      
@@ -183,22 +185,133 @@ const productController = {
        } 
 
         if (file && row[0].imageId != null) { 
+            const [record] = await db.query("SELECT * FROM product_images WHERE id = ?",[row[0].imageId]); 
+            date = record[0].created.toISOString().split("T")[0]; 
+            name = record[0].name; 
         const image = await productController.loadImage(file,writtenFiles); 
+        const newName = image.filename; 
+
         await db.query(
              `UPDATE products SET title = ? WHERE id = ?`,
              [title,id]);
         await db.query(
              `UPDATE product_images SET name = ? WHERE id = ?`,
              [image.filename,row[0].imageId]);
-        return res.status(200).json({message:`Record Updated`});
+        // return res.status(200).json({message:`Record Updated`}); 
+
+         
+        /////////////identica al delete() 
+
+
+     let index = 0;
+
+const moveNext = () => {
+
+    if (index >= sizeImg.length) {
+
+        console.log('tutti i file spostati');
+
+        fs.rm(`tmp/${date}`, { recursive: true, force: true }, (err) => {
+            if (err) console.error(err);
+        });
+
+        return;
+    }
+
+    const size = sizeImg[index];
+
+    const oldPath = `uploads/${date}/${size}/${name}`;
+    const newPath = `tmp/${date}/${size}/${newName}`;
+
+    fs.mkdir(`tmp/${date}/${size}`, { recursive: true }, (err) => {
+
+        if (err) {
+            console.error(err);
+            return;
+        }
+
+        fs.rename(oldPath, newPath, (err) => {
+
+            if (err) {
+                console.error('rename error:', err);
+                return;
+            }
+
+            console.log('file spostato:', size);
+
+            index++;
+            moveNext();
+        });
+
+    });
+};
+
+moveNext();
+
+
+
+
+
+
+
+
+return res.status(200).json({message:`Record Updated`}); 
+
+
+        //////////////////////////////
+
+
+
+
+
+
+
+
+
        } 
 
     });
 
-     } catch (error) {
-          return res.status(500).json({
-                 message: error instanceof Error ? error.message : "Unknown error"
-             });
+     } catch (error) { 
+       if (writtenFiles?.length > 0) {
+        for (const f of writtenFiles) {
+            try {
+                fs.unlinkSync(f);
+            } catch (e) {
+                console.error('unlink failed:', e);
+            }
+         }
+       }
+
+        let index = 0;
+
+        const rollbackNext = () => {
+
+            if (index >= sizeImg.length) {
+
+                return res.status(500).json({
+                     message: error instanceof Error ? error.message : "Unknown error"
+                });
+            }
+
+            const size = sizeImg[index];
+
+            fs.rename(
+                `tmp/${date}/${size}/${name}`,
+                `uploads/${date}/${size}/${name}`,
+                (err) => {
+
+                    if (err) {
+                        console.error('Rollback failed:', err);
+                    }
+
+                    index++;
+                    rollbackNext();
+                }
+            );
+        };
+
+        rollbackNext();
      }
   },
 
