@@ -297,18 +297,78 @@ const productController = {
         if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
 
         if (row[0].imageId) { 
+           
             await db.query("UPDATE products SET imageId = NULL WHERE id = ?",[id]);
             await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);  
+
+
+            const oldPath = 'uploads/2026-05-21/min/1779344634905_875de4eb-1d6d-4a66-b2db-288ee98384c2.jpg';
+            const newPath = 'tmp/1779344634905_875de4eb-1d6d-4a66-b2db-288ee98384c2.jpg';
+
+            fs.mkdir('tmp', { recursive: true }, (err) => {
+
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+
+                fs.rename(oldPath, newPath, (err) => {
+
+                    if (err) {
+                        console.error('rename error:', err);
+                        return;
+                    }
+
+                    console.log('file spostato con rename'); 
+
+                        
+                     fs.unlink(newPath, (err) => {
+
+            if (err) return console.error('unlink error:', err);
+
+            console.log('file eliminato');
+
+            // ora elimini la cartella tmp
+            fs.rm('tmp', { 
+                recursive: true, force: true 
+            }, (err) => {
+                if (err) console.error(err);
+            });
+
+        });
+
+
+                }); 
+
+            });
+
         }
 
-        await db.query("DELETE FROM products WHERE id = ?",[id]);
+             await db.query("DELETE FROM products WHERE id = ?",[id]);
         }); 
 
         return res.status(200).json({
             message: "record deleted"
         });
         
-      } catch (error) {
+      } catch (error) { 
+
+        fs.rename(
+                    'tmp/1779345222368_7f0d3724-aad9-4683-af2b-f8acae2a94ab.jpg',
+                    'uploads/2026-05-21/medium/1779345222368_7f0d3724-aad9-4683-af2b-f8acae2a94ab.jpg',
+                    (err) => {
+
+                        if (err) {
+                            console.error('Rollback failed:', err);
+                        }
+
+                        return res.status(500).json({
+                            message: 'rollback executed'
+                        });
+
+                    }
+                );
+
         return res.status(500).json({
                  error: error instanceof Error ? error.message : "Unknown error"
              });
