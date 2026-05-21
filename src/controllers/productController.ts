@@ -157,6 +157,69 @@ const productController = {
       
      if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
 
+     
+
+    if (req.body.removeImage === 'true') { 
+            const [record] = await db.query("SELECT * FROM product_images WHERE id = ?",[row[0].imageId]); 
+            date = record[0].created.toISOString().split("T")[0]; 
+            name = record[0].name;  
+
+
+            /////////////identica al delete() 
+
+
+let index = 0;
+
+const moveNext = () => {
+
+    if (index >= sizeImg.length) {
+
+        console.log('tutti i file spostati');
+
+        fs.rm(`tmp/${date}`, { recursive: true, force: true }, (err) => {
+            if (err) console.error(err);
+        });
+
+        return;
+    }
+
+    const size = sizeImg[index];
+
+    const oldPath = `uploads/${date}/${size}/${name}`;
+    const newPath = `tmp/${date}/${size}/${name}`;
+
+    fs.mkdir(`tmp/${date}/${size}`, { recursive: true }, (err) => {
+
+        if (err) {
+            console.error(err);
+            return;
+        }
+
+        fs.rename(oldPath, newPath, (err) => {
+
+            if (err) {
+                console.error('rename error:', err);
+                return;
+            }
+
+            console.log('file spostato:', size);
+
+            index++;
+            moveNext();
+        });
+
+    });
+};
+
+moveNext();   
+
+await db.query("UPDATE products SET imageId = NULL WHERE id = ?",[id]);
+             await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);
+
+            return res.status(200).json({message:"Image Deleted"});
+        //return res.status(200).json({message:`Image Deleted`});
+    } 
+
      if (!file) {
         await db.query("UPDATE products SET title = ? WHERE id = ?", [title,id]); 
         return res.status(200).json({message:`Record Updated`}); 
@@ -203,7 +266,7 @@ const productController = {
         /////////////identica al delete() 
 
 
-     let index = 0;
+let index = 0;
 
 const moveNext = () => {
 
