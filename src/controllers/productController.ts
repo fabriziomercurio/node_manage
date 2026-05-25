@@ -139,6 +139,7 @@ const productController = {
   {
     let name:string | undefined; 
     let date:string | undefined; 
+    let newName:string|undefined;
 
     const writtenFiles: string[] = [];
     try { 
@@ -197,13 +198,14 @@ const productController = {
                 productId: 'testing'
             }; 
        } 
-
+// let newName:string|undefined; 
         if (file && row[0].imageId != null) { 
             const [record] = await db.query("SELECT * FROM product_images WHERE id = ?",[row[0].imageId]); 
             date = record[0].created.toISOString().split("T")[0]; 
             name = record[0].name; 
         const image = await productController.loadImage(file,writtenFiles); 
-        const newName = image.filename; 
+        // const newName = image.filename; 
+        newName = image.filename; 
 
         await db.query(
              `UPDATE products SET title = ? WHERE id = ?`,
@@ -215,7 +217,7 @@ const productController = {
             const index:number = 0;
             productController.moveNext(index,date,name,newName); 
 
-            return res.status(200).json({message:`Record Updated`}); 
+            return res.status(200).json({message:`Record Updateds`}); 
 
        } 
 
@@ -232,35 +234,8 @@ const productController = {
          }
        }
 
-        let index = 0;
-
-        const rollbackNext = () => {
-
-            if (index >= sizeImg.length) {
-
-                return res.status(500).json({
-                     message: error instanceof Error ? error.message : "Unknown error"
-                });
-            }
-
-            const size = sizeImg[index];
-
-            fs.rename(
-                `tmp/${date}/${size}/${name}`,
-                `uploads/${date}/${size}/${name}`,
-                (err) => {
-
-                    if (err) {
-                        console.error('Rollback failed:', err);
-                    }
-
-                    index++;
-                    rollbackNext();
-                }
-            );
-        };
-
-        rollbackNext();
+        let index:number = 0;
+        productController.rollbackNext(index,error,date,name,newName,res);
      }
   },
 
@@ -367,7 +342,7 @@ let name: string | undefined;
 
             let index:number = 0;
             const newName = ''; 
-            productController.moveNext(index,date,name,newName);
+            await productController.moveNext(index,date,name,newName);
 
         }
 
@@ -381,36 +356,10 @@ let name: string | undefined;
       } catch (error) { 
 
 
-        let index = 0;
+        let index:number = 0; 
 
-        const rollbackNext = () => {
+        productController.rollbackNext(index,error,date,name,undefined,res);
 
-            if (index >= sizeImg.length) {
-
-                return res.status(500).json({
-                    message: 'rollback executed'
-                });
-            }
-
-            const size = sizeImg[index];
-
-            fs.rename(
-                `tmp/${date}/${size}/${name}`,
-                `uploads/${date}/${size}/${name}`,
-                (err) => {
-
-                    if (err) {
-                        console.error('Rollback failed:', err);
-                    }
-
-                    index++;
-                    rollbackNext();
-                }
-            );
-        };
-
-        rollbackNext();
-        
         return res.status(500).json({
                  error: error instanceof Error ? error.message : "Unknown error"
              });
@@ -462,7 +411,41 @@ async moveNext(index:number,date:string|undefined,name:string|undefined,newName:
             productController.moveNext(index,date,name,newName);
         });
     });
-  }
+  }, 
+
+  async rollbackNext(index:number,error:any,date:string|undefined,name:string|undefined,newName:string|undefined,res:Response){
+
+            if (index >= sizeImg.length) {
+
+                return res.status(500).json({
+                     message: error instanceof Error ? error.message : "Unknown error"
+                });
+            }
+
+            const size = sizeImg[index];
+              
+            const sourceName = newName ?? name;
+
+            if (!sourceName) {
+               console.error("Impossible state: missing filename");
+               return;
+            }
+
+            fs.rename(
+                `tmp/${date}/${size}/${sourceName}`,
+                `uploads/${date}/${size}/${name}`,
+                (err) => {
+
+                    if (err) {
+                        console.error('Rollback failed:', err);
+                        return;
+                    }
+
+                    index++;
+                    productController.rollbackNext(index,error,date,name,newName,res);
+                }
+            );
+        }
    
 }
 
