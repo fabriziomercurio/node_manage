@@ -8,6 +8,9 @@ import path from 'node:path';
 import { MongoClient } from "mongodb";
 import { randomUUID } from "crypto";
 import test from "fs/promises";
+import ProductService from '../services/productService.js';
+import ProductRepository from '../repositories/productRepository.js';
+import { successResponse, errorResponse } from '../helpers/Response.js';
 
 
 const client = new MongoClient("mongodb://mongo:27017");
@@ -25,15 +28,17 @@ export async function getMongo() {
 
 const sizeImg:string[] = ['original', 'medium', 'min'];
 
+const serviceProduct = new ProductService(new ProductRepository); 
+
 const productController = {     
 
     async show(req:Request,res:Response) 
     {
-      try {
-            const rows = await conn.query(`SELECT * FROM products`)             
-            res.status(200).send(rows[0]);
-         } catch (err) {
-            res.status(500).send({ error: err })
+      try {  
+            const [rows] = await serviceProduct.show(); 
+            successResponse(res,rows);
+         } catch (err) { 
+            errorResponse(res, err instanceof Error ? err.message : "Unknown error")
          }
     },  
 
