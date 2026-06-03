@@ -7,6 +7,8 @@ import sharp from "sharp";
 import path from 'node:path'; 
 import { MongoClient } from "mongodb";
 import { randomUUID } from "crypto";
+import test from "fs/promises";
+
 
 const client = new MongoClient("mongodb://mongo:27017");
 
@@ -46,12 +48,12 @@ const productController = {
 
             if (record[0].imageId == null) return res.status(200).json({result: record[0]});
         
-            const [result]:any = await conn.query(`SELECT title,name,imageId,product_images.created FROM products 
+            const [result]:any = await conn.query(`SELECT title,name,imageId,product_images.created_at FROM products 
                 INNER JOIN product_images ON product_images.id = products.imageId WHERE products.id = ?`, [id]); 
 
-            const created = result[0]?.created; 
+            const created = result[0]?.created_at; 
             
-            if (created) result[0].created = new Date(created).toISOString().split("T")[0]; //overwritten created field                     
+            if (created) result[0].created_at = new Date(created).toISOString().split("T")[0]; //overwritten created_at field                     
 
             return res.status(200).json({result: result[0], sizes:sizeImg});
 
@@ -145,7 +147,7 @@ const productController = {
     try { 
      
      const id = req.params.productId;
-     const title = req.body.title;
+     const title = req.body.title; 
 
      const file = req.file; 
 
@@ -158,18 +160,17 @@ const productController = {
 
     if (req.body.removeImage === 'true') { 
         const [record] = await db.query("SELECT * FROM product_images WHERE id = ?",[row[0].imageId]); 
-        date = record[0].created.toISOString().split("T")[0]; 
+        date = record[0].created_at.toISOString().split("T")[0]; 
         name = record[0].name;  
             
     let index:number = 0;
     let newName:string = '';  
     productController.moveNext(index,date,name,newName); 
 
-
     await db.query("UPDATE products SET imageId = NULL WHERE id = ?",[id]);
-             await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);
-
-            return res.status(200).json({message:"Image Deleted"});
+    await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);
+     
+    return { deleteImage:true, date:date}
     } 
 
      if (!file) {
@@ -198,13 +199,12 @@ const productController = {
                 productId: 'testing'
             }; 
        } 
-// let newName:string|undefined; 
+
         if (file && row[0].imageId != null) { 
             const [record] = await db.query("SELECT * FROM product_images WHERE id = ?",[row[0].imageId]); 
-            date = record[0].created.toISOString().split("T")[0]; 
+            date = record[0].created_at.toISOString().split("T")[0]; 
             name = record[0].name; 
         const image = await productController.loadImage(file,writtenFiles); 
-        // const newName = image.filename; 
         newName = image.filename; 
 
         await db.query(
@@ -221,7 +221,16 @@ const productController = {
 
        } 
 
+    }); 
+
+    if (result.deleteImage) { 
+    
+    productController.removeEmptyFolders("uploads", result.date); 
+
+    return res.status(200).json({
+        message: "Image Deleted"
     });
+}
 
      } catch (error) { 
        if (writtenFiles?.length > 0) {
@@ -322,12 +331,12 @@ const productController = {
   async delete(req: Request, res:Response) 
    {     
       let date: string | undefined;
-let name: string | undefined; 
+      let name: string | undefined; 
 
       try {
         const id = req.params.productId; 
 
-        await withTransaction(async (db: any) => {  
+        const result = await withTransaction(async (db: any) => {  
 
         const [row]:any = await db.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
       
@@ -335,19 +344,23 @@ let name: string | undefined;
 
         if (row[0].imageId) { 
             const [record] = await db.query("SELECT * FROM product_images WHERE id = ?",[row[0].imageId]); 
-            date = record[0].created.toISOString().split("T")[0]; 
+            date = record[0].created_at.toISOString().split("T")[0]; 
             name = record[0].name; 
-             await db.query("UPDATE products SET imageId = NULL WHERE id = ?",[id]);
-             await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);  
+            await db.query("UPDATE products SET imageId = NULL WHERE id = ?",[id]);
+            await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);  
 
             let index:number = 0;
             const newName = ''; 
             await productController.moveNext(index,date,name,newName);
-
         }
 
-           await db.query("DELETE FROM products WHERE id = ?",[id]);
+           await db.query("DELETE FROM products WHERE id = ?",[id]); 
+           return {deleteImage:true, date:date}
         }); 
+
+        if (result.deleteImage) {
+            await productController.removeEmptyFolders("uploads",result.date); 
+        }
 
         return res.status(200).json({
             message: "record deleted"
@@ -355,16 +368,14 @@ let name: string | undefined;
         
       } catch (error) { 
 
-
         let index:number = 0; 
-
         productController.rollbackNext(index,error,date,name,undefined,res);
 
         return res.status(500).json({
                  error: error instanceof Error ? error.message : "Unknown error"
              });
-      }
-   }, 
+        }
+    }, 
 
 
 async moveNext(index:number,date:string|undefined,name:string|undefined,newName:string){ 
@@ -445,7 +456,33 @@ async moveNext(index:number,date:string|undefined,name:string|undefined,newName:
                     productController.rollbackNext(index,error,date,name,newName,res);
                 }
             );
+        },
+
+    async removeEmptyFolders(main:string, date:string)
+    {
+
+    const originalDir = path.join(main, date);
+
+    const entries = await test.readdir(originalDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+        const fullPath = path.join(originalDir, entry.name);
+
+        if (entry.isDirectory()) {
+            const subEntries = await test.readdir(fullPath);
+
+            if (subEntries.length === 0) {
+                await test.rmdir(fullPath);
+            }
         }
+    }
+
+    const remaining = await test.readdir(originalDir);
+
+    if (remaining.length === 0) {
+        await test.rmdir(originalDir);
+     }
+    }
    
 }
 
