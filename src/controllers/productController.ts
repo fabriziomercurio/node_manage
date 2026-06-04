@@ -30,27 +30,10 @@ const productController = {
     async edit(req:Request,res:Response) 
     {       
         try { 
-            const id = req.params.productId; 
-            
-            const [record]:any = await conn.query(`SELECT id,title,imageId FROM products WHERE products.id = ?`, [id]); 
-
-            if (!record || record.length === 0) return res.status(404).json({message:`Record not found`});  
-
-            if (record[0].imageId == null) return res.status(200).json({result: record[0]});
-        
-            const [result]:any = await conn.query(`SELECT title,name,imageId,product_images.created_at FROM products 
-                INNER JOIN product_images ON product_images.id = products.imageId WHERE products.id = ?`, [id]); 
-
-            const created = result[0]?.created_at; 
-            
-            if (created) result[0].created_at = new Date(created).toISOString().split("T")[0]; //overwritten created_at field                     
-
-            return res.status(200).json({result: result[0], sizes:sizeImg});
-
+            const [result,sizes]:any = await serviceProduct.edit(req.params.productId);          
+            return res.status(200).json({result: result[0], sizes:sizes});
         } catch (err) {
-            return res.status(500).json({
-                message: err instanceof Error ? err.message : "Unknown error"
-            });
+            errorResponse(res, err instanceof Error ? err.message : "Unknown error")
         }       
     }, 
 

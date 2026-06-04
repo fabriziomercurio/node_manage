@@ -8,7 +8,7 @@ class ProductRepository
 
    async findIdProduct(id:string|string[]|undefined) 
    {
-    return conn.query("SELECT id,imageId FROM products WHERE id = ?", [id]);
+    return conn.query("SELECT id,title,imageId FROM products WHERE id = ?", [id]);
    }
 
    async storeProduct(title:string, imageId?:number|null){
@@ -24,6 +24,12 @@ class ProductRepository
    {
      return conn.query(`DELETE FROM product_images WHERE id = ?`,[imageId]);
    } 
+
+   async joinProductAndImageProduct(id:string|string[]|undefined)
+   {
+    return conn.query(`SELECT title,name,imageId,product_images.created_at FROM products 
+            INNER JOIN product_images ON product_images.id = products.imageId WHERE products.id = ?`,[id])
+   }
 
    async removeRecordProductById(id:string|string[]|undefined) 
    {
