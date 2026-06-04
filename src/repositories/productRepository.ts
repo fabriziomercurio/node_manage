@@ -11,8 +11,28 @@ class ProductRepository
     return conn.query("SELECT id,title,imageId FROM products WHERE id = ?", [id]);
    }
 
+   async findIdProductImage(id:string|string[]|undefined) 
+   {
+    return conn.query("SELECT * FROM product_images WHERE id = ?", [id]);
+   }
+
    async storeProduct(title:string, imageId?:number|null){
      return conn.query(`INSERT INTO products (title, imageId) VALUES (?,?)`,[title,imageId]); 
+   } 
+
+  //  async updateRecord(title:string,id:string|string[]|undefined) 
+  //  {
+  //   return conn.query(`UPDATE products SET title = ? WHERE id = ?`, [title,id]);
+  //  }
+
+  async updateRecord(title:string,id:string|string[]|undefined, imageId?:number|null) 
+   {
+    return conn.query(`UPDATE products SET title = ?, imageId = ? WHERE id = ?`, [title,imageId,id]);
+   }
+
+   async updateProductImageRecord(name:string,id:string|string[]|undefined) 
+   {
+    return conn.query(`UPDATE product_images SET name = ? WHERE id = ?`, [name,id]);
    }
 
    async selectProductImageById(imageId:number) 
