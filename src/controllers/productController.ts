@@ -5,26 +5,11 @@ import fs from 'node:fs';
 import {withTransaction}  from '../db/wrappers/transaction.js'; 
 import sharp from "sharp";
 import path from 'node:path'; 
-import { MongoClient } from "mongodb";
 import { randomUUID } from "crypto";
 import test from "fs/promises";
 import ProductService from '../services/productService.js';
 import ProductRepository from '../repositories/productRepository.js';
 import { successResponse, errorResponse } from '../helpers/Response.js';
-
-
-const client = new MongoClient("mongodb://mongo:27017");
-
-let mongoDb: any;
-
-export async function getMongo() {
-    if (!mongoDb) {
-        await client.connect();
-        mongoDb = client.db("app_logs");
-        console.log("Mongo connected");
-    }
-    return mongoDb;
-}
 
 const sizeImg:string[] = ['original', 'medium', 'min'];
 
@@ -71,74 +56,19 @@ const productController = {
 
     async store(req: Request, res: Response) {   
 
-    const file = req.file;
     const writtenFiles: string[] = [];
 
     try {
-        const { title } = req.body;
+        
+        serviceProduct.store(req.body.title,req.file,writtenFiles);
 
-        const result = await withTransaction(async (db: any) => {
-
-            if (!file) { await db.query(`INSERT INTO products (title) VALUES (?)`,[title]);
-                return {
-                productId: 'testing'
-              };
-            }
-            
-            const image = await productController.loadImage(file,writtenFiles); 
-
-            const [img] = await db.query(
-                `INSERT INTO product_images (name) VALUES (?)`,
-                [image.filename]
-            ); 
-
-            const imageId = (img as any).insertId;
-
-            await db.query(
-                `INSERT INTO products (title, imageId) VALUES (?,?)`,
-                [title,imageId]
-            ); 
-
-            return {
-                imageId,
-                productId: 'testing'
-            }; 
-        }); 
-
-        const mongoDb = await getMongo();
-
-            const auditLog = {
-                action: "PRODUCT_CREATED",
-                title,
-                imageId:result.imageId,
-                createdAt: new Date()
-            }; 
-
-            await mongoDb.collection("audit_logs").insertOne(auditLog);
-
-            if (!fs.existsSync('./logs')) {
-              fs.mkdirSync('./logs', { recursive: true });
-            }
-
-            fs.appendFile(`./logs/audit.log`, JSON.stringify(auditLog) + '\n', 
-            (err) => {
-                if (err) {
-                    console.error(err)
-                };
-            }
-        );
-
-        console.log("MONGO INSERT RESULT:", auditLog);
-
-        return res.send({ message: "record insert with success" });
+        successResponse(res,null,'record insert with success');
 
     } catch (err: any) {
         for (const f of writtenFiles) {
             fs.unlinkSync(f);
         }
-        return res.status(500).json({
-            error: err.message
-        });
+        errorResponse(res, err instanceof Error ? err.message : "Unknown error")       
     }
   },
 
