@@ -270,32 +270,7 @@ const productController = {
 
       try {
         const id = req.params.productId; 
-
-        const result = await withTransaction(async (db: any) => {  
-
-        const [row]:any = await db.query("SELECT id,imageId FROM products WHERE id = ?", [id]); 
-      
-        if (!row || row.length === 0) return res.status(404).json({error:`Record not found`}); 
-
-        if (row[0].imageId) { 
-            const [record] = await db.query("SELECT * FROM product_images WHERE id = ?",[row[0].imageId]); 
-            date = record[0].created_at.toISOString().split("T")[0]; 
-            name = record[0].name; 
-            await db.query("UPDATE products SET imageId = NULL WHERE id = ?",[id]);
-            await db.query("DELETE FROM product_images WHERE id = ?",[row[0].imageId]);  
-
-            let index:number = 0;
-            const newName = ''; 
-            await productController.moveNext(index,date,name,newName);
-        }
-
-           await db.query("DELETE FROM products WHERE id = ?",[id]); 
-           return {deleteImage:true, date:date}
-        }); 
-
-        if (result.deleteImage) {
-            await productController.removeEmptyFolders("uploads",result.date); 
-        }
+        await serviceProduct.delete(id); 
 
         return res.status(200).json({
             message: "record deleted"
@@ -305,10 +280,7 @@ const productController = {
 
         let index:number = 0; 
         productController.rollbackNext(index,error,date,name,undefined,res);
-
-        return res.status(500).json({
-                 error: error instanceof Error ? error.message : "Unknown error"
-             });
+         errorResponse(res, error instanceof Error ? error.message : "Unknown error")
         }
     }, 
 
