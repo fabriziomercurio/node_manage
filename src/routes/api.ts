@@ -4,6 +4,7 @@ import loginController from "../controllers/loginController.js";
 import multer from "multer"; 
 import fs from 'node:fs'; 
 import validateID from "../middlewares/validateId.js";
+import UserController from "../controllers/UserController.js";
 
 const router = Router(); 
 
@@ -21,6 +22,8 @@ router.get('/products/:productId',validateID('productId'),productController.edit
 router.put('/product/:productId',validateID('productId'), upload.single('image'),productController.update); 
 router.delete('/product/:productId',validateID('productId'),productController.delete)
 
-router.post('/login',loginController.login);
+router.post('/login',loginController.login); 
+
+router.post('/users',UserController.store); 
 
 export default router;

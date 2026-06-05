@@ -41,10 +41,9 @@ const productController = {
 
     const writtenFiles: string[] = [];
 
-    try {
-        
+    try {     
+           
         serviceProduct.store(req.body.title,req.file,writtenFiles);
-
         successResponse(res,null,'record insert with success');
 
     } catch (err: any) {
