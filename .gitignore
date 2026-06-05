@@ -7,4 +7,7 @@ uploads/*
 uploads/original/*
 !uploads/original/.gitkeep 
 
-logs/*
+logs/* 
+
+src/rest-client-test/* 
+tmp/*
