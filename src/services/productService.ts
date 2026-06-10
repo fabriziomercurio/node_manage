@@ -118,8 +118,13 @@ class ProductService {
                 return { deleteImage: true, date: date }
             }
 
-            if (!file) {
+            if (!file && row[0].imageId === null) { 
                 await this.repo.updateRecord(title, id);
+                return { message: `Record Updated` };
+            } 
+
+            if (!file && row[0].imageId !== null) { 
+                await this.repo.updateRecord(title, id,row[0].imageId);
                 return { message: `Record Updated` };
             }
 
@@ -131,13 +136,13 @@ class ProductService {
 
                 const imageId = (img as any).insertId;
 
-
                 await this.repo.updateRecord(title, id, imageId);
 
                 return { imageId, productId: 'testing' };
             }
 
-            if (file && row[0].imageId != null) {
+            if (file && row[0].imageId != null) { 
+                console.log('entro adesso',row[0].imageId);
                 const [record] = await db.query("SELECT * FROM product_images WHERE id = ?", [row[0].imageId]);
                 date = record[0].created_at.toISOString().split("T")[0];
                 name = record[0].name;
@@ -145,7 +150,7 @@ class ProductService {
                 let newName: string = '';
                 newName = image.filename;
 
-                await this.repo.updateRecord(title, id);
+                await this.repo.updateRecord(title, id, row[0].imageId);
                 await this.repo.updateProductImageRecord(image.filename, row[0].imageId);
 
                 const index: number = 0;
@@ -190,7 +195,7 @@ class ProductService {
             return { deleteImage: true, date: date }
         });
 
-        if (result.deleteImage) {
+        if (result.deleteImage && result.date) {
             await this.removeEmptyFolders("uploads", result.date);
         }
     }
