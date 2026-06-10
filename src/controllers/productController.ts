@@ -30,7 +30,8 @@ const productController = {
     async edit(req:Request,res:Response) 
     {       
         try { 
-            const data:any = await serviceProduct.edit(req.params.productId);          
+            const data:any = await serviceProduct.edit(req.params.productId);     
+            console.log('raw',data);       
             return res.status(200).json({result: data.result, sizes:data.sizes});
         } catch (err) {
             errorResponse(res, err instanceof Error ? err.message : "Unknown error")
@@ -97,9 +98,7 @@ const productController = {
         const id = req.params.productId; 
         await serviceProduct.delete(id); 
 
-        return res.status(200).json({
-            message: "record deleted"
-        });
+        successResponse(res,null,`record deleted`);
         
       } catch (error) { 
 

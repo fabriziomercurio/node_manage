@@ -20,11 +20,6 @@ class ProductRepository
      return conn.query(`INSERT INTO products (title, imageId) VALUES (?,?)`,[title,imageId]); 
    } 
 
-  //  async updateRecord(title:string,id:string|string[]|undefined) 
-  //  {
-  //   return conn.query(`UPDATE products SET title = ? WHERE id = ?`, [title,id]);
-  //  }
-
   async updateRecord(title:string,id:string|string[]|undefined, imageId?:number|null) 
    {
     return conn.query(`UPDATE products SET title = ?, imageId = ? WHERE id = ?`, [title,imageId,id]);
