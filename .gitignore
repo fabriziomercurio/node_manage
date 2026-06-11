@@ -7,4 +7,6 @@ uploads/*
 uploads/original/*
 !uploads/original/.gitkeep 
 
-logs/*
+logs/* 
+
+private.key

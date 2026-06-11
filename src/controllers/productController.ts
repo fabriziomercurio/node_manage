@@ -1,11 +1,7 @@
 
 import { Request, Response } from 'express'; 
-import conn from '../db/connection.js'; 
 import fs from 'node:fs'; 
-import {withTransaction}  from '../db/wrappers/transaction.js'; 
-import sharp from "sharp";
 import path from 'node:path'; 
-import { randomUUID } from "crypto";
 import test from "fs/promises";
 import ProductService from '../services/productService.js';
 import ProductRepository from '../repositories/productRepository.js';
