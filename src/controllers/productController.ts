@@ -1,19 +1,13 @@
 
 import { Request, Response } from 'express'; 
-import conn from '../db/connection.js'; 
 import fs from 'node:fs'; 
-import {withTransaction}  from '../db/wrappers/transaction.js'; 
-import sharp from "sharp";
-import path from 'node:path'; 
-import { randomUUID } from "crypto";
-import test from "fs/promises";
-import ProductService from '../services/productService.js';
+import ProductService from '../services/ProductService.js';
 import ProductRepository from '../repositories/productRepository.js';
 import { successResponse, errorResponse } from '../helpers/Response.js';
-
-const sizeImg:string[] = ['original', 'medium', 'min'];
+import ManageImageService from '../services/ManageImageService.js';
 
 const serviceProduct = new ProductService(new ProductRepository); 
+const manageImageService = new ManageImageService;
 
 const productController = {     
 
@@ -84,7 +78,7 @@ const productController = {
        }
 
         let index:number = 0;
-        productController.rollbackNext(index,error,date,name,newName,res);
+        manageImageService.rollbackNext(index,error,date,name,newName,res);
         errorResponse(res, error instanceof Error ? error.message : "Unknown error") 
      }
   },
@@ -103,70 +97,10 @@ const productController = {
       } catch (error) { 
 
         let index:number = 0; 
-        productController.rollbackNext(index,error,date,name,undefined,res);
-         errorResponse(res, error instanceof Error ? error.message : "Unknown error")
+        manageImageService.rollbackNext(index,error,date,name,undefined,res);
+        errorResponse(res, error instanceof Error ? error.message : "Unknown error")
         }
     }, 
-
-  async rollbackNext(index:number,error:any,date:string|undefined,name:string|undefined,newName:string|undefined,res:Response){
-
-            if (index >= sizeImg.length) {
-
-                return res.status(500).json({
-                     message: error instanceof Error ? error.message : "Unknown error"
-                });
-            }
-
-            const size = sizeImg[index];
-              
-            const sourceName = newName ?? name;
-
-            if (!sourceName) {
-               console.error("Impossible state: missing filename");
-               return;
-            }
-
-            fs.rename(
-                `tmp/${date}/${size}/${sourceName}`,
-                `uploads/${date}/${size}/${name}`,
-                (err) => {
-
-                    if (err) {
-                        console.error('Rollback failed:', err);
-                        return;
-                    }
-
-                    index++;
-                    productController.rollbackNext(index,error,date,name,newName,res);
-                }
-            );
-        },
-
-    async removeEmptyFolders(main:string, date:string)
-    {
-
-    const originalDir = path.join(main, date);
-
-    const entries = await test.readdir(originalDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-        const fullPath = path.join(originalDir, entry.name);
-
-        if (entry.isDirectory()) {
-            const subEntries = await test.readdir(fullPath);
-
-            if (subEntries.length === 0) {
-                await test.rmdir(fullPath);
-            }
-        }
-    }
-
-    const remaining = await test.readdir(originalDir);
-
-    if (remaining.length === 0) {
-        await test.rmdir(originalDir);
-     }
-    }
    
 }
 

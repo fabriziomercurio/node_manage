@@ -9,5 +9,7 @@ uploads/original/*
 
 logs/* 
 
+
 src/rest-client-test/* 
 tmp/*
+private.key
