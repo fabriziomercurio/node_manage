@@ -1,10 +1,14 @@
 import { Request, Response } from "express"; 
-import conn from "../db/connection.js";
+import Connected from '../db/connected.js';
 import { AuthService } from "../services/AuthService.js";
 import { JwtTokenProvider } from "../services/JwtTokenProvider.js";
 import fs from "fs"; 
 import path from "path";
 import { LoginPayload, ValidateTokenPayload } from "../types/Payload.js";
+import { Mysql } from "../classes/MySql.js";
+
+const connected = new Connected(new Mysql);
+const conn = await connected.connection();
 
 const privateKey = fs.readFileSync(path.join(process.cwd(), "private.key"), "utf-8"); 
 

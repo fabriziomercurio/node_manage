@@ -1,9 +1,14 @@
-import conn from '../db/connection.js';  
+import Connected from '../db/connected.js';
+import { Mysql } from '../classes/MySql.js';
+
+const connected = new Connected(new Mysql); 
+const conn = await connected.connection(); 
 
 class ProductRepository 
 {
+
    async show(){
-     return conn.query(`SELECT id,title FROM products`); 
+     return conn.query(`SELECT id,title FROM products`);
    } 
 
    async findIdProduct(id:string|string[]|undefined) 

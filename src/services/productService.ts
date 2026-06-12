@@ -1,24 +1,15 @@
 import ProductRepository from "../repositories/productRepository.js";
 import { withTransaction } from '../db/wrappers/transaction.js';
-import { MongoClient } from "mongodb";
 import fs from 'node:fs';
 import sharp from "sharp";
 import path from 'node:path';
 import { randomUUID } from "crypto";
 import test from "fs/promises";
+import Connected from '../db/connected.js'; 
+import { MongoDB } from "../classes/Mongo.js";
 
-const client = new MongoClient("mongodb://mongo:27017");
-
-let mongoDb: any;
-
-export async function getMongo() {
-    if (!mongoDb) {
-        await client.connect();
-        mongoDb = client.db("app_logs");
-        console.log("Mongo connected");
-    }
-    return mongoDb;
-}
+const connected = new Connected(new MongoDB);
+const conn = await connected.connection();  
 
 class ProductService {
     constructor(private repo: ProductRepository) { }
@@ -52,16 +43,13 @@ class ProductService {
             };
         });
 
-        const mongoDb = await getMongo();
-
         const auditLog = {
             action: "PRODUCT_CREATED",
             title,
             imageId: result.imageId,
             createdAt: new Date()
         };
-
-        await mongoDb.collection("audit_logs").insertOne(auditLog);
+         await conn.collection("audit_logs").insertOne(auditLog);
 
         if (!fs.existsSync('./logs')) {
             fs.mkdirSync('./logs', { recursive: true });

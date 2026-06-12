@@ -1,6 +1,10 @@
 import { Request, Response } from 'express'; 
-import conn from '../db/connection.js'; 
 import { successResponse, errorResponse } from '../helpers/Response.js';
+import Connected from '../db/connected.js';
+import { Mysql } from '../classes/MySql.js';
+
+const connected = new Connected(new Mysql);
+const conn = await connected.connection();  
 
 const UserController = {
    
