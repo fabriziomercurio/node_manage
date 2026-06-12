@@ -1,7 +1,7 @@
 import { Request, Response } from "express"; 
 import Connected from '../db/connected.js';
 import { AuthService } from "../services/AuthService.js";
-import { JwtTokenProvider } from "../services/JwtTokenProvider.js";
+import { JwtTokenProvider } from "../providers/JwtTokenProvider.js";
 import fs from "fs"; 
 import path from "path";
 import { LoginPayload, ValidateTokenPayload } from "../types/Payload.js";
