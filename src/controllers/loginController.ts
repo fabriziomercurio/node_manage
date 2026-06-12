@@ -29,11 +29,7 @@ const loginController = {
            
            const payload = {id:result[0].id,email:result[0].email,exp:Math.floor(Date.now() / 1000) + 3600}; 
 
-           const token = tokenService.create(payload); 
-             
-           const publicKey = fs.readFileSync(path.join(process.cwd(), "public.key"), "utf-8");
-
-           tokenService.validateToken({token:token,publicKey:publicKey}); 
+           const token = tokenService.create(payload);  
 
            res.status(200).json({"message":"you're logged","fake-token":token}); 
 
