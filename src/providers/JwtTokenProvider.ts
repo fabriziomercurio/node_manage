@@ -23,12 +23,12 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
 
     try {
 
-    const base64UrlHeader = Base64URL(this.header); 
-    const base64UrlPayload = Base64URL(payload); 
+    const base64UrlHeader = Base64URL(JSON.stringify(this.header)); 
+    const base64UrlPayload = Base64URL(JSON.stringify(payload)); 
 
     const data = `${base64UrlHeader}.${base64UrlPayload}`;  
 
-    const signature = crypto.createSign(`RSA-SHA256`).update(data).sign(this.privateKey, "base64");
+    const signature = crypto.createSign(`RSA-SHA256`).update(data).sign(this.privateKey, "base64url");
 
     return `${base64UrlHeader}.${base64UrlPayload}.${signature}`;
       
@@ -49,12 +49,20 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
 
       const data = `${header}.${payload}`;
 
-      return crypto.verify(
-         "RSA-SHA256",
-         Buffer.from(data),
-         crypto.createPublicKey(dataload.publicKey),
-         Buffer.from(signature, "base64url")
-      );
+      const verify = crypto.createVerify("RSA-SHA256");
+      verify.update(data);
+      const isInvalid = verify.verify(dataload.publicKey, signature); 
+
+      if (!isInvalid) return false; 
+
+      const decodedPayload: LoginPayload = JSON.parse(
+        Buffer.from(payload, "base64url").toString()
+      ); 
+
+      if (decodedPayload.exp < Date.now() / 1000) {
+           throw new Error("Token expired");
+      }
+      return true; 
    }
 } 
 
