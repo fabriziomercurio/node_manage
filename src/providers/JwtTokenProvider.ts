@@ -39,9 +39,15 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
 
    public validate(dataload:ValidateTokenPayload) : boolean 
    { 
-      const parts = dataload.token.split('.'); 
+      if (!dataload.token) throw new Error("Token is missing"); 
 
-      if (parts.length !== 3)  throw new Error("Token is invalid"); 
+      const replaceToken = dataload.token.replace(/^Bearer\s+/, ''); // ^ means "start of string"
+
+      console.log('replaceToken: ',replaceToken);
+
+      const parts = replaceToken.split('.'); 
+
+      if (parts.length !== 3) throw new Error("Token is invalid"); 
 
       const [header, payload, signature] = parts; 
 
@@ -51,9 +57,9 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
 
       const verify = crypto.createVerify("RSA-SHA256");
       verify.update(data);
-      const isInvalid = verify.verify(dataload.publicKey, signature); 
+      const isInvalid = verify.verify(dataload.publicKey, signature, "base64url"); 
 
-      if (!isInvalid) return false; 
+      if (!isInvalid) throw new Error("Token is invalid"); 
 
       const decodedPayload: LoginPayload = JSON.parse(
         Buffer.from(payload, "base64url").toString()
