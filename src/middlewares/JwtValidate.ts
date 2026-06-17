@@ -22,7 +22,7 @@ const JwtValidate = (req:Request,res:Response, next:NextFunction) => {
            next()          
             
         } catch (error) {
-             return res.status(500).json({
+             return res.status(401).json({
                 message: error instanceof Error ? error.message : "Unknown error"
             });
         }

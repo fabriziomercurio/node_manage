@@ -43,8 +43,6 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
 
       const replaceToken = dataload.token.replace(/^Bearer\s+/, ''); // ^ means "start of string"
 
-      console.log('replaceToken: ',replaceToken);
-
       const parts = replaceToken.split('.'); 
 
       if (parts.length !== 3) throw new Error("Token is invalid"); 
@@ -56,19 +54,37 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
       const data = `${header}.${payload}`;
 
       const verify = crypto.createVerify("RSA-SHA256");
+
       verify.update(data);
-      const isInvalid = verify.verify(dataload.publicKey, signature, "base64url"); 
+      
+      const isValid = verify.verify(dataload.publicKey, signature, "base64url"); 
 
-      if (!isInvalid) throw new Error("Token is invalid"); 
+      if (!isValid) throw new Error("Token is invalid"); 
 
-      const decodedPayload: LoginPayload = JSON.parse(
-        Buffer.from(payload, "base64url").toString()
-      ); 
+      const decodedPayload = this.decodePayload(payload);
 
-      if (decodedPayload.exp < Date.now() / 1000) {
-           throw new Error("Token expired");
-      }
+      this.validateExpiration(decodedPayload.exp) 
+
       return true; 
+   } 
+
+   private validateExpiration(exp:number) :void
+   {
+      if (exp < Date.now() / 1000) {
+           throw new Error("Token expired");
+      } 
+   } 
+
+   private decodePayload(payload:string) : LoginPayload
+   {
+      const raw = Buffer.from(payload, "base64url").toString();
+
+      const parsed = JSON.parse(raw);
+
+      const decodedPayload =
+      typeof parsed === "string" ? JSON.parse(parsed) : parsed;  
+
+      return decodedPayload; 
    }
 } 
 
