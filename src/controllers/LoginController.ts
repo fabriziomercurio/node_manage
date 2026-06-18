@@ -39,19 +39,6 @@ const loginController = {
                 message: err instanceof Error ? err.message : "Unknown error"
             });
        }
-    }, 
-    
-    async Logout(req:Request,res:Response) 
-    {
-        try { 
-
-           return res.status(200).json({"message":"you're logged out"}); 
-            
-        } catch (error) {
-            return res.status(500).json({
-                message: error instanceof Error ? error.message : "Unknown error"
-            });
-        }
     }
 } 
 
