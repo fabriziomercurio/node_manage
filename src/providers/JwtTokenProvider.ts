@@ -81,7 +81,7 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
    private validateExpiration(exp:number) :void
    {
       if (exp < Date.now() / 1000) {
-           throw new Error("Token expired");
+           throw new Error("Token_Expired");
       } 
    } 
 
