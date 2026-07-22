@@ -36,11 +36,17 @@ const loginController = {
 
            if(!bcrypt.compareSync(password, result[0].password)) return res.status(404).json({message:"Credentials are not correct"});
 
-           const payload = {id:result[0].id,email:result[0].email,exp:Math.floor(Date.now() / 1000) + 600}; 
+           const accessPayload = {id:result[0].id,email:result[0].email,exp:Math.floor(Date.now() / 1000) + 16}; 
 
-           const token = tokenService.create(payload);  
+           const accessToken = tokenService.create(accessPayload);  
 
-           return res.status(200).json({"message":"you're logged","JWT":token}); 
+           accessPayload.exp = Math.floor(Date.now() / 1000) + 600; 
+
+           const refreshPayload = accessPayload;
+
+           const refreshToken = tokenService.create(refreshPayload);
+
+           return res.status(200).json({"message":"you're logged","accessToken":accessToken,"refreshToken":refreshToken}); 
 
        } catch (err) {
           return res.status(500).json({

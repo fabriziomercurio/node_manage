@@ -1,11 +1,12 @@
 import { Router } from "express";
-import productController from "../controllers/productController.js"; 
+import productController from "../controllers/ProductController.js"; 
 import loginController from "../controllers/LoginController.js";
 import multer from "multer"; 
 import fs from 'node:fs'; 
 import validateID from "../middlewares/ValidateId.js";
 import UserController from "../controllers/UserController.js";
 import JwtValidate from "../middlewares/JwtValidate.js";
+import RefreshTokenController from "../controllers/RefreshTokenController.js";
 
 const router = Router();
 
@@ -19,7 +20,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/login', loginController.login);
 
-router.post('/users', UserController.store);
+router.post('/users', UserController.store); 
+
+router.post('/refresh-token', RefreshTokenController.refresh); 
 
 router.use(JwtValidate);
 

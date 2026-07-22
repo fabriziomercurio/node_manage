@@ -37,7 +37,8 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
     }
    } 
 
-   public validate(dataload:ValidateTokenPayload) : boolean 
+   // public validate(dataload:ValidateTokenPayload) : boolean 
+   private verifyAndDecode(dataload:ValidateTokenPayload) : LoginPayload 
    { 
       if (!dataload.token) throw new Error("Token is missing"); 
 
@@ -65,8 +66,17 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
 
       this.validateExpiration(decodedPayload.exp) 
 
-      return true; 
+      return decodedPayload; 
    } 
+
+   public validate(payload: ValidateTokenPayload): boolean {
+      this.verifyAndDecode(payload); 
+      return true; 
+   }
+
+   public getPayloadEncoded(payload: ValidateTokenPayload): LoginPayload {
+      return this.verifyAndDecode(payload); 
+   }
 
    private validateExpiration(exp:number) :void
    {
