@@ -16,7 +16,7 @@ export class Mysql implements ConnectionInterface
       });
     } 
 
-   async connection() 
+   async connection() : Promise<any>
    {
       return this.pool     
    }

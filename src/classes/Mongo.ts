@@ -8,7 +8,7 @@ export class MongoDB implements ConnectionInterface
   
     private mongoDB!:Db; // ! => definite assignment assertion 
 
-    async connection()
+    async connection() : Promise<any>
     {
         if (!this.mongoDB)
         {

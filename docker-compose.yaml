@@ -24,4 +24,13 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./storage/mongo:/data/db
+      - ./storage/mongo:/data/db 
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis 
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./storage/redis_data:/data
