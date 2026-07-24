@@ -56,7 +56,7 @@ const loginController = {
            const refreshToken = tokenService.create(refreshPayload);
 
            await redis.set(
-                `refreshToken:${refreshPayload.id}`,
+                `refreshToken:${refreshPayload.jti}`,
                 refreshToken,
                 {
                     EX: 60 * 60 * 24 * 30

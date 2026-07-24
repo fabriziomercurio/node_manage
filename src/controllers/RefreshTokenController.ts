@@ -13,56 +13,47 @@ const publicKey = fs.readFileSync(path.join(process.cwd(),"public.key"), "utf-8"
 const tokenService = new AuthService<LoginPayload,ValidateTokenPayload>(new JwtTokenProvider(privateKey));  
 
 const RefreshTokenController = {
-      
+
+    /**
+     * @method get check if token exists in Redis    
+     * @method del revoke old refresh token 
+     * @method create generate a new refresh token
+     * @method set save new refresh token in Redis
+     */
     async refresh(req: Request, res: Response) {
         try {
             const { token } = req.body;
 
-            const redis = await connected.connection();      
-            
+            const redis = await connected.connection();
+
             const refreshPayload = tokenService.getPayloadEncoded({
                 token: token,
                 publicKey: publicKey
             });
 
-            const storedToken = await redis.get(`refreshToken:${refreshPayload.id}`); // check if token exists in redis 
+            const storedToken = await redis.get(`refreshToken:${refreshPayload.jti}`);      
 
             if (!storedToken) {
                 throw new Error("Refresh token revoked");
-            } 
+            }
 
             if (storedToken !== token) {
                 throw new Error("Invalid refresh token");
             }
 
-          
-
-         await redis.del(`refreshToken:${refreshPayload.id}`); //revoke old refresh token 
-
-   
-
-
-
+            await redis.del(`refreshToken:${refreshPayload.jti}`); 
 
             refreshPayload.jti = crypto.randomUUID();
 
-            const refreshToken: string = tokenService.create(refreshPayload); // generate a new refresh token
- 
-            await redis.set(`refreshToken:${refreshPayload.id}`, refreshToken, { EX: 60 * 60 * 24 * 30 }); // save new refresh token in redis
+            const refreshToken: string = tokenService.create(refreshPayload);
 
-
-       
-
-          //  refreshPayload.exp = Math.floor(Date.now() / 1000) + 16; // The access session will need to be shorter, so the duration must be reduced.
+            await redis.set(`refreshToken:${refreshPayload.jti}`, refreshToken, { EX: 60 * 60 * 24 * 30 }); 
 
             const accessPayload = {
-                ...refreshPayload, 
-                jti:crypto.randomUUID(), 
-                exp:Math.floor(Date.now() / 1000) + 16
-
-           }
-console.log('access => ', accessPayload); 
-          //  const accessPayload = refreshPayload;
+                ...refreshPayload,
+                jti: crypto.randomUUID(),
+                exp: Math.floor(Date.now() / 1000) + 16
+            }
 
             const accessToken: string = tokenService.create(accessPayload);
 
