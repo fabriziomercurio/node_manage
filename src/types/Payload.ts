@@ -1,4 +1,5 @@
-export type LoginPayload =  {
+export type LoginPayload =  { 
+   jti:string,
    id:number,
    email:string,
    exp:number

@@ -9,6 +9,10 @@ import LoginService from "../services/LoginService.js";
 import LoginRepository from "../repositories/LoginRepository.js";
 import { UserSchema } from "../validations/schemas/UserSchema.js";
 import { errorResponse } from "../helpers/Response.js";
+import Connected from "../db/connected.js";
+import { Redis } from "../classes/Redis.js";
+
+const connected = new Connected(new Redis);
 
 const privateKey = fs.readFileSync(path.join(process.cwd(), "private.key"), "utf-8"); 
 
@@ -24,6 +28,8 @@ const loginController = {
 
            const {email, password} = req.body; 
 
+           const redis = await connected.connection(); 
+
            const validation = UserSchema.safeParse(req.body); 
         
            if (!validation.success) {  
@@ -36,15 +42,26 @@ const loginController = {
 
            if(!bcrypt.compareSync(password, result[0].password)) return res.status(404).json({message:"Credentials are not correct"});
 
-           const accessPayload = {id:result[0].id,email:result[0].email,exp:Math.floor(Date.now() / 1000) + 16}; 
+           const accessPayload = {jti:crypto.randomUUID(),id:result[0].id,email:result[0].email,exp:Math.floor(Date.now() / 1000) + 16}; 
 
            const accessToken = tokenService.create(accessPayload);  
 
-           accessPayload.exp = Math.floor(Date.now() / 1000) + 600; 
+            const refreshPayload = {
+                ...accessPayload, 
+                jti:crypto.randomUUID(), 
+                exp:Math.floor(Date.now() / 1000) + 600
 
-           const refreshPayload = accessPayload;
+           }
 
            const refreshToken = tokenService.create(refreshPayload);
+
+           await redis.set(
+                `refreshToken:${refreshPayload.id}`,
+                refreshToken,
+                {
+                    EX: 60 * 60 * 24 * 30
+                }
+            );
 
            return res.status(200).json({"message":"you're logged","accessToken":accessToken,"refreshToken":refreshToken}); 
 

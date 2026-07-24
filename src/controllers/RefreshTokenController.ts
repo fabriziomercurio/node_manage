@@ -25,19 +25,48 @@ const RefreshTokenController = {
                 publicKey: publicKey
             });
 
-            const refreshToken: string = tokenService.create(refreshPayload); 
+            const storedToken = await redis.get(`refreshToken:${refreshPayload.id}`); // check if token exists in redis 
 
-            await redis.set("refreshToken", refreshToken); 
+            if (!storedToken) {
+                throw new Error("Refresh token revoked");
+            } 
 
-            const tokenRedis = await redis.get("refreshToken");
+            if (storedToken !== token) {
+                throw new Error("Invalid refresh token");
+            }
 
-            refreshPayload.exp = Math.floor(Date.now() / 1000) + 16;
+          
 
-            const accessPayload = refreshPayload;
+         await redis.del(`refreshToken:${refreshPayload.id}`); //revoke old refresh token 
+
+   
+
+
+
+
+            refreshPayload.jti = crypto.randomUUID();
+
+            const refreshToken: string = tokenService.create(refreshPayload); // generate a new refresh token
+ 
+            await redis.set(`refreshToken:${refreshPayload.id}`, refreshToken, { EX: 60 * 60 * 24 * 30 }); // save new refresh token in redis
+
+
+       
+
+          //  refreshPayload.exp = Math.floor(Date.now() / 1000) + 16; // The access session will need to be shorter, so the duration must be reduced.
+
+            const accessPayload = {
+                ...refreshPayload, 
+                jti:crypto.randomUUID(), 
+                exp:Math.floor(Date.now() / 1000) + 16
+
+           }
+console.log('access => ', accessPayload); 
+          //  const accessPayload = refreshPayload;
 
             const accessToken: string = tokenService.create(accessPayload);
 
-            return res.status(200).json({ "message": "new access token is done", "accessToken": accessToken, "refreshToken": refreshToken, 'redis':'' });
+            return res.status(200).json({ "message": "new access token is done", "accessToken": accessToken, "refreshToken": refreshToken });
 
         } catch (error) {
             return res.status(401).json({
