@@ -128,18 +128,19 @@ class ProductService {
             }
 
             if (file && row[0].imageId != null) { 
-                console.log('entro adesso',row[0].imageId);
-                const [record] = await db.query("SELECT * FROM product_images WHERE id = ?", [row[0].imageId]);
+                const [record] = await db.query("SELECT * FROM product_images WHERE id = ?", [row[0].imageId]); 
+                
                 date = record[0].created_at.toISOString().split("T")[0];
-                name = record[0].name;
-                const image = await manageImageService.loadImage(file, writtenFiles);
+                name = record[0].name; 
+                
+                const image = await manageImageService.loadImage(file, writtenFiles, date);
                 let newName: string = '';
                 newName = image.filename;
 
                 await this.repo.updateRecord(title, id, row[0].imageId);
                 await this.repo.updateProductImageRecord(image.filename, row[0].imageId);
 
-                const index: number = 0;
+                const index: number = 0; 
                 await manageImageService.moveNext(index, date, name, newName);
 
                 return { message: `Record Updateds` };

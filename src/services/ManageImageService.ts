@@ -9,7 +9,8 @@ class ManageImageService
 {
     sizeImg:string[] = ['original', 'medium', 'min'];
 
-    async loadImage(file: Express.Multer.File, writtenFiles: string[]) {
+    async loadImage(file: Express.Multer.File, writtenFiles: string[], date?:string) { 
+        
         const input = file.buffer;
         const filename = file.originalname;
         const extension = path.extname(filename).toLowerCase();
@@ -22,8 +23,9 @@ class ManageImageService
 
         const d = new Date();
 
-        const formatted = d.toISOString().split('T')[0]!;  //! it means that is not "undefined"
-
+        const today = d.toISOString().split("T")[0]!;
+        const formatted = date ?? today; 
+     
         const originalDir = path.join("uploads", formatted, "original");
         ensureDir(originalDir);
 
@@ -93,11 +95,10 @@ class ManageImageService
      * 
      * move files from the main folder to a temporary folder
      */
-    async moveNext(index: number, date: string | undefined, name: string | undefined, newName: string) {
+    async moveNext(index: number, date: string | undefined, name: string | undefined, newName: string) { 
+        
         const sizeImg: string[] = ['original', 'medium', 'min'];
         if (index >= sizeImg.length) {
-
-            console.log('tutti i file spostati');
 
             fs.rm(`tmp/${date}`, { recursive: true, force: true }, (err) => {
                 if (err) console.error(err);
