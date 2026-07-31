@@ -32,4 +32,7 @@ router.get('/products/:productId', validateID('productId'), productController.ed
 router.put('/product/:productId', validateID('productId'), upload.single('image'), productController.update);
 router.delete('/product/:productId', validateID('productId'), productController.delete);  
 
+router.post('/logout',loginController.logout); 
+
+
 export default router;

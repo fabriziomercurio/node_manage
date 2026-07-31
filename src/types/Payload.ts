@@ -1,7 +1,7 @@
 export type LoginPayload =  { 
    jti:string,
    id:number,
-   email:string,
+   email?:string,
    exp:number
 } 
 

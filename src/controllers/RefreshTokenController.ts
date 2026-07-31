@@ -31,7 +31,7 @@ const RefreshTokenController = {
                 publicKey: publicKey
             });
 
-            const storedToken = await redis.get(`refreshToken:${refreshPayload.jti}`);      
+            const storedToken = await redis.get(`refresh_token:whitelist:${refreshPayload.jti}`);      
 
             if (!storedToken) {
                 throw new Error("Refresh token revoked");
@@ -41,18 +41,18 @@ const RefreshTokenController = {
                 throw new Error("Invalid refresh token");
             }
 
-            await redis.del(`refreshToken:${refreshPayload.jti}`); 
+            await redis.del(`refresh_token:whitelist:${refreshPayload.jti}`); 
 
             refreshPayload.jti = crypto.randomUUID();
 
             const refreshToken: string = tokenService.create(refreshPayload);
 
-            await redis.set(`refreshToken:${refreshPayload.jti}`, refreshToken, { EX: 60 * 60 * 24 * 30 }); 
+            await redis.set(`refresh_token:whitelist:${refreshPayload.jti}`, refreshToken, { EX: 60 * 60 * 24 * 30 }); 
 
             const accessPayload = {
-                ...refreshPayload,
+                id:refreshPayload.id,
                 jti: crypto.randomUUID(),
-                exp: Math.floor(Date.now() / 1000) + 16
+                exp: Math.floor(Date.now() / 1000) + 12
             }
 
             const accessToken: string = tokenService.create(accessPayload);
