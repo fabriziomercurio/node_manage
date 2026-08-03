@@ -1,12 +1,12 @@
 import { ConnectionInterface } from "../interfaces/ConnectionInterface.js";
 
-class Connected 
+class Connected<T> 
 {   
-    constructor(private conn:ConnectionInterface) { }
+    constructor(private conn:ConnectionInterface<T>) { }
     
-    async connection() 
+    async connection() : Promise<T>
     {
-        return this.conn.connection(); 
+        return this.conn.getClient() 
     }
 } 
 

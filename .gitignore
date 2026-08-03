@@ -10,3 +10,5 @@ uploads/original/*
 logs/* 
 
 private.key
+
+src/config/.env

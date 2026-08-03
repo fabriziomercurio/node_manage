@@ -1,19 +1,17 @@
 import { ConnectionInterface } from "../interfaces/ConnectionInterface.js";
-import { Db, MongoClient } from "mongodb"; 
+import { Db } from "mongodb"; 
+import { clientMongo } from "../adapters/ClientMongo.js";
 
-const client = new MongoClient("mongodb://mongo:27017");
-
-export class MongoDB implements ConnectionInterface 
-{
-  
+export class MongoDB implements ConnectionInterface<Db>
+{ 
     private mongoDB!:Db; // ! => definite assignment assertion 
 
-    async connection() : Promise<any>
+    async getClient() : Promise<Db>
     {
         if (!this.mongoDB)
         {
-            await client.connect();
-            this.mongoDB = client.db("app_logs");
+            await clientMongo.connect();
+            this.mongoDB = clientMongo.db("app_logs");
         }
 
         return this.mongoDB;

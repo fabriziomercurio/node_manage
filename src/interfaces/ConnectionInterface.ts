@@ -1,4 +1,4 @@
-export interface ConnectionInterface
+export interface ConnectionInterface<T>
 {
-    connection():Promise<any>; 
+    getClient():Promise<T>; 
 }

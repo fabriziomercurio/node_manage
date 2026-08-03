@@ -1,24 +1,12 @@
+import { Pool } from "mysql2/promise";
+import { MySqlPool } from "../adapters/MySqlPool.js";
 import { ConnectionInterface } from "../interfaces/ConnectionInterface.js";
-import mysql from 'mysql2/promise'; 
 
-export class Mysql implements ConnectionInterface 
+export class Mysql implements ConnectionInterface<Pool>
 {
-    private pool; 
-
-    constructor() 
-    {
-        this.pool = mysql.createPool({
-        host: 'db',
-        user: 'root',
-        database: 'manage',
-        port: 3306,
-        password: 'root',
-      });
-    } 
-
-   async connection() : Promise<any>
+   async getClient() : Promise<Pool>
    {
-      return this.pool     
+      return MySqlPool     
    }
 } 
 

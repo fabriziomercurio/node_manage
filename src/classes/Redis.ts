@@ -1,21 +1,19 @@
-import { createClient } from "redis";
+import { createClient, RedisClient, RedisClientType } from "redis";
 import { ConnectionInterface } from "../interfaces/ConnectionInterface.js";
+import { clientRedis } from "../adapters/ClientRedis.js";
 
-export class Redis implements ConnectionInterface {
-
-    private client = createClient({
-        url: "redis://redis:6379"
-    });
+export class Redis implements ConnectionInterface<RedisClientType>{
 
     constructor() {
-        this.client.on("error", console.error);
+        clientRedis.on("error", console.error);
     }
 
-    async connection() {
-        if (!this.client.isOpen) {
-            await this.client.connect();
+    async getClient() : Promise<RedisClientType> {
+        
+        if (!clientRedis.isOpen) {
+            await clientRedis.connect();
         }
 
-        return this.client;
+        return clientRedis;
     }
 }
