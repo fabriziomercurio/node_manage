@@ -6,6 +6,7 @@ import fs from "fs";
 import path from 'node:path';
 import Connected from '../db/connected.js';
 import { Redis } from '../classes/Redis.js';
+import { TOKEN_CONFIG } from '../helpers/TokenConfig.js';
 
 const connected = new Connected(new Redis); 
 const privateKey = fs.readFileSync(path.join(process.cwd(), "private.key"), "utf-8");
@@ -52,7 +53,7 @@ const RefreshTokenController = {
             const accessPayload = {
                 id:refreshPayload.id,
                 jti: crypto.randomUUID(),
-                exp: Math.floor(Date.now() / 1000) + 12
+                exp: Math.floor(Date.now() / 1000) + TOKEN_CONFIG.accessTokenExp
             }
 
             const accessToken: string = tokenService.create(accessPayload);

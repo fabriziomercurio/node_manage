@@ -1,4 +1,4 @@
-export function Base64URL(input:any) 
+export function Base64URL(input:string) 
 {
     return Buffer
     .from(JSON.stringify(input))

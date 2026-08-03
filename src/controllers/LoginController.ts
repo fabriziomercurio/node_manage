@@ -10,6 +10,7 @@ import LoginRepository from "../repositories/LoginRepository.js";
 import { UserSchema } from "../validations/schemas/UserSchema.js";
 import Connected from "../db/connected.js";
 import { Redis } from "../classes/Redis.js";
+import { TOKEN_CONFIG } from "../helpers/TokenConfig.js";
 
 const connected = new Connected(new Redis);
 const privateKey = fs.readFileSync(path.join(process.cwd(), "private.key"), "utf-8");
@@ -38,14 +39,14 @@ const loginController = {
 
             if (!bcrypt.compareSync(password, result[0].password)) return res.status(404).json({ message: "Credentials are not correct" });
 
-            const accessPayload = { jti: crypto.randomUUID(), id: result[0].id, email: result[0].email, exp: Math.floor(Date.now() / 1000) + 300 };
+            const accessPayload = { jti: crypto.randomUUID(), id: result[0].id, email: result[0].email, exp: Math.floor(Date.now() / 1000) + TOKEN_CONFIG.accessTokenExp }; 
 
             const accessToken = tokenService.create(accessPayload);
 
             const refreshPayload = {
                 id: accessPayload.id,
                 jti: crypto.randomUUID(),
-                exp: Math.floor(Date.now() / 1000) + 600
+                exp: Math.floor(Date.now() / 1000) + TOKEN_CONFIG.refreshTokenExp
             }
 
             const refreshToken = tokenService.create(refreshPayload);
