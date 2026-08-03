@@ -7,6 +7,7 @@ import validateID from "../middlewares/ValidateId.js";
 import UserController from "../controllers/UserController.js";
 import JwtValidate from "../middlewares/JwtValidate.js";
 import RefreshTokenController from "../controllers/RefreshTokenController.js";
+import CheckTokenBlackList from "../middlewares/CheckTokenBlackList.js";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.post('/refresh-token', RefreshTokenController.refresh);
 
 router.use(JwtValidate);
 
-router.get('/products', productController.show);
+router.get('/products', CheckTokenBlackList, productController.show);
 router.post('/products', upload.single('image'), productController.store);
 router.get('/products/:productId', validateID('productId'), productController.edit);
 router.put('/product/:productId', validateID('productId'), upload.single('image'), productController.update);

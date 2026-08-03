@@ -7,8 +7,7 @@ import { successResponse, errorResponse } from '../helpers/Response.js';
 import ManageImageService from '../services/ManageImageService.js';
 
 const serviceProduct = new ProductService(new ProductRepository); 
-const manageImageService = new ManageImageService;
-
+const manageImageService = new ManageImageService; 
 const productController = {     
 
     async show(req:Request,res:Response) 
