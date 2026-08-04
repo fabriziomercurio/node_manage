@@ -1,4 +1,5 @@
 import { Base64URL } from "../helpers/Base64URL.js";
+import { TOKEN_CONFIG } from "../helpers/TokenConfig.js";
 import { TokenProvider } from "../interfaces/TokenProvider.js";
 import { LoginPayload, ValidateTokenPayload } from "../types/Payload.js";
 import crypto from "crypto";
@@ -92,6 +93,21 @@ export class JwtTokenProvider implements TokenProvider<LoginPayload,ValidateToke
       typeof parsed === "string" ? JSON.parse(parsed) : parsed;  
 
       return decodedPayload; 
+   } 
+
+   public createAccessPayload(id:number,email:string) : LoginPayload
+   {
+      const accessPayload = { jti: crypto.randomUUID(), id: id, email: email, exp: Math.floor(Date.now() / 1000) + TOKEN_CONFIG.accessTokenExp }; 
+      return accessPayload;
+   } 
+
+   public createRefreshPayload(accessPayloadID: number) : LoginPayload {
+      const refreshPayload = {
+            id: accessPayloadID,
+            jti: crypto.randomUUID(),
+            exp: Math.floor(Date.now() / 1000) + TOKEN_CONFIG.refreshTokenExp
+        } 
+      return refreshPayload;
    }
 } 
 

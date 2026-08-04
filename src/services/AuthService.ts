@@ -11,12 +11,22 @@ export class AuthService<TCreate,TValidate>
 
     validateToken(payload:TValidate) : boolean
     {
-       return this.tokenProvider.validate(payload); 
+        return this.tokenProvider.validate(payload); 
     } 
 
     getPayloadEncoded(payload:TValidate) : LoginPayload
     {
       return this.tokenProvider.getPayloadEncoded(payload)
+    } 
+
+    createAccessPayload(id:number,email:string) : LoginPayload
+    {
+       return this.tokenProvider.createAccessPayload(id,email); 
+    } 
+
+    createRefreshPayload(accessPayloadID:number) : LoginPayload
+    {
+       return this.tokenProvider.createRefreshPayload(accessPayloadID); 
     }
 } 
 
