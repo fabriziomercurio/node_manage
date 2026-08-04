@@ -13,6 +13,7 @@ MySQL (relational data)
 Mongo (audit log)
 Docker 
 Docker Compose
+Redis (I've uses it for revoked tokens)
 
 -- Starting the project
 

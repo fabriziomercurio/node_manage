@@ -6,11 +6,13 @@ import { AuthService } from "../services/AuthService.js";
 import { JwtTokenProvider } from "../providers/JwtTokenProvider.js";
 import fs from 'node:fs'; 
 import path from "path";
+import RedisService from "../services/RedisService.js";
 
 const connected = new Connected(new Redis);
 const privateKey = fs.readFileSync(path.join(process.cwd(), "private.key"), "utf-8"); 
 const tokenService = new AuthService<LoginPayload,ValidateTokenPayload>(new JwtTokenProvider(privateKey)); 
 const publicKey = fs.readFileSync(path.join(process.cwd(),"public.key"), "utf-8");
+const redisService = new RedisService; 
 
 const CheckTokenBlackList = async (req:Request,res:Response, next:NextFunction) => {
     try { 
@@ -24,7 +26,7 @@ const CheckTokenBlackList = async (req:Request,res:Response, next:NextFunction) 
             publicKey: publicKey
         });
 
-        const storedToken = await redis.get(`access_token:blacklist:${accessPayload.jti}`); 
+        const storedToken = await redisService.checkAccessOnBlackList(accessPayload.jti); 
 
         if (storedToken) return res.status(403).json({"message":"Access Token Revoked"});         
 

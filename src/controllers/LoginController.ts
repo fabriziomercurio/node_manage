@@ -11,12 +11,14 @@ import { Redis } from "../classes/Redis.js";
 import { TOKEN_CONFIG } from "../helpers/TokenConfig.js";
 import { loadPrivateKey } from "../config/keyPrivateProvider.js";
 import { loadPublicKey } from "../config/keyPublicProvider.js";
+import RedisService from "../services/RedisService.js";
 
 const connected = new Connected(new Redis);
 const privateKey = loadPrivateKey(); 
 const publicKey = loadPublicKey();
 const tokenService = new AuthService<LoginPayload, ValidateTokenPayload>(new JwtTokenProvider(privateKey));
 const loginService = new LoginService(new LoginRepository);
+const redisService = new RedisService;
 
 const loginController = {
 
@@ -51,13 +53,7 @@ const loginController = {
 
             const refreshToken = tokenService.create(refreshPayload);
 
-            await redis.set(
-                `refresh_token:whitelist:${refreshPayload.jti}`,
-                refreshToken,
-                {
-                    EX: 60 * 60 * 24 * 30
-                }
-            );
+            redisService.setWhiteList(refreshPayload.jti,refreshToken)
 
             return res.status(200).json({ "message": "you're logged", "accessToken": accessToken, "refreshToken": refreshToken });
 
@@ -80,16 +76,7 @@ const loginController = {
                 publicKey: publicKey
             });
 
-            await redis.set(
-                `access_token:blacklist:${accessPayload.jti}`,
-                'invalid',
-                {
-                    EX: 60 * 60 * 24 * 30
-                }
-            );
-
-
-            await redis.del(`refresh_token:whitelist:${accessPayload.jti}`);
+            redisService.blackList(accessPayload.jti); 
 
             return res.status(200).json({ "message": "you're logout" });
 
