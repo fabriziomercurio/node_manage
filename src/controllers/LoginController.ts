@@ -1,33 +1,14 @@
 import { Request, Response } from "express";
-import { AuthService } from "../services/AuthService.js";
-import { JwtTokenProvider } from "../providers/JwtTokenProvider.js";
-import { LoginPayload, ValidateTokenPayload } from "../types/Payload.js";
-import bcrypt from 'bcrypt';
 import LoginService from "../services/LoginService.js";
 import LoginRepository from "../repositories/LoginRepository.js";
 import { UserSchema } from "../validations/schemas/UserSchema.js";
-import Connected from "../db/connected.js";
-import { Redis } from "../classes/Redis.js";
-import { TOKEN_CONFIG } from "../helpers/TokenConfig.js";
-import { loadPrivateKey } from "../config/keyPrivateProvider.js";
-import { loadPublicKey } from "../config/keyPublicProvider.js";
-import RedisService from "../services/RedisService.js";
 
-const connected = new Connected(new Redis);
-const privateKey = loadPrivateKey(); 
-const publicKey = loadPublicKey();
-const tokenService = new AuthService<LoginPayload, ValidateTokenPayload>(new JwtTokenProvider(privateKey));
 const loginService = new LoginService(new LoginRepository);
-const redisService = new RedisService;
 
 const loginController = {
 
     async login(req: Request, res: Response) {
         try {
-
-            const { email, password } = req.body;
-
-            const redis = await connected.connection();
 
             const validation = UserSchema.safeParse(req.body);
 
@@ -35,25 +16,7 @@ const loginController = {
                 return res.status(404).json({ message: validation.error?.issues });
             }
 
-            const [result]: any = await loginService.checkIfEmailExist(email)
-
-            if (result.length === 0) return res.status(404).json({ message: "User not found" });
-
-            if (!bcrypt.compareSync(password, result[0].password)) return res.status(404).json({ message: "Credentials are not correct" });
-
-            const accessPayload = { jti: crypto.randomUUID(), id: result[0].id, email: result[0].email, exp: Math.floor(Date.now() / 1000) + TOKEN_CONFIG.accessTokenExp }; 
-
-            const accessToken = tokenService.create(accessPayload);
-
-            const refreshPayload = {
-                id: accessPayload.id,
-                jti: crypto.randomUUID(),
-                exp: Math.floor(Date.now() / 1000) + TOKEN_CONFIG.refreshTokenExp
-            }
-
-            const refreshToken = tokenService.create(refreshPayload);
-
-            redisService.setWhiteList(refreshPayload.jti,refreshToken)
+            const { accessToken, refreshToken } = await loginService.login(req.body.email, req.body.password);
 
             return res.status(200).json({ "message": "you're logged", "accessToken": accessToken, "refreshToken": refreshToken });
 
@@ -67,18 +30,10 @@ const loginController = {
     async logout(req: Request, res: Response) {
         try {
 
-            const redis = await connected.connection();
-
             const token = req.headers['authorization']!;
+            const { message } = await loginService.logout(token);
 
-            const accessPayload = tokenService.getPayloadEncoded({
-                token: token,
-                publicKey: publicKey
-            });
-
-            redisService.blackList(accessPayload.jti); 
-
-            return res.status(200).json({ "message": "you're logout" });
+            return res.status(200).json({ message });
 
         } catch (error) {
             return res.status(401).json({

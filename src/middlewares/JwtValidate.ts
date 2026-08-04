@@ -17,9 +17,10 @@ const JwtValidate = (req:Request,res:Response, next:NextFunction) => {
 
         tokenService.validateToken({
           token:token,
-              publicKey:publicKey
-               } )               
-           next()          
+          publicKey:publicKey 
+        });  
+
+        next();          
             
         } catch (error) {
              return res.status(401).json({
