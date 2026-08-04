@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/AuthService.js";
 import { JwtTokenProvider } from "../providers/JwtTokenProvider.js";
-import fs from "fs";
-import path from "path";
 import { LoginPayload, ValidateTokenPayload } from "../types/Payload.js";
 import bcrypt from 'bcrypt';
 import LoginService from "../services/LoginService.js";
@@ -11,10 +9,12 @@ import { UserSchema } from "../validations/schemas/UserSchema.js";
 import Connected from "../db/connected.js";
 import { Redis } from "../classes/Redis.js";
 import { TOKEN_CONFIG } from "../helpers/TokenConfig.js";
+import { loadPrivateKey } from "../config/keyPrivateProvider.js";
+import { loadPublicKey } from "../config/keyPublicProvider.js";
 
 const connected = new Connected(new Redis);
-const privateKey = fs.readFileSync(path.join(process.cwd(), "private.key"), "utf-8");
-const publicKey = fs.readFileSync(path.join(process.cwd(), "public.key"), "utf-8");
+const privateKey = loadPrivateKey(); 
+const publicKey = loadPublicKey();
 const tokenService = new AuthService<LoginPayload, ValidateTokenPayload>(new JwtTokenProvider(privateKey));
 const loginService = new LoginService(new LoginRepository);
 
