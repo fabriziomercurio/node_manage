@@ -9,13 +9,13 @@ class ManageImageService
 {
     sizeImg:string[] = ['original', 'medium', 'min'];
 
-    async loadImage(file: Express.Multer.File, writtenFiles: string[], date?:string) { 
+    async loadImage(files: Express.Multer.File[], writtenFiles: string[], date?:string) { 
         
-        const input = file.buffer;
-        const filename = file.originalname;
-        const extension = path.extname(filename).toLowerCase();
+        // const input = file.buffer;
+        // const filename = file.originalname;
+        // const extension = path.extname(filename).toLowerCase();
 
-        const base = `${Date.now()}_${randomUUID()}`;
+        // const base = `${Date.now()}_${randomUUID()}`;
 
         const ensureDir = (dir: string) => {
             fs.mkdirSync(dir, { recursive: true });
@@ -29,7 +29,25 @@ class ManageImageService
         const originalDir = path.join("uploads", formatted, "original");
         ensureDir(originalDir);
 
+        //const pipeline = sharp(input).resize({ width: 1600 });
+const results: { filename: string }[] = [];
+
+const sizes = [
+            { name: "min", size: 400 },
+            { name: "medium", size: 800 }
+        ];
+    
+      for (const file of files) { 
+
+        const input = file.buffer;
+        const filename = file.originalname;
+        const extension = path.extname(filename).toLowerCase();
+
+        const base = `${Date.now()}_${randomUUID()}`;
+
         const pipeline = sharp(input).resize({ width: 1600 });
+
+
 
         if (extension === '.jpeg' || extension === '.jpg') {
             const filePath = path.join(originalDir, `${base}.jpg`);
@@ -49,10 +67,7 @@ class ManageImageService
             throw new Error("format not valid");
         }
 
-        const sizes = [
-            { name: "min", size: 400 },
-            { name: "medium", size: 800 }
-        ];
+        
 
         for (const e of sizes) {
 
@@ -86,9 +101,14 @@ class ManageImageService
 
         const ext = extension === '.png' ? 'webp' : 'jpg';
 
-        return {
-            filename: `${base}.${ext}`
-        }
+        // return {
+        //     filename: `${base}.${ext}`
+        // } 
+        results.push({
+            filename:`${base}.${ext}`
+        })
+      } 
+      return results; 
     }
     
     /**

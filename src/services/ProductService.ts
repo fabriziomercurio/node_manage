@@ -16,7 +16,7 @@ class ProductService {
         return this.repo.show();
     }
 
-    async store(title: string, file?: Express.Multer.File, writtenFiles: string[] = []) {
+    async store(title: string, file?: Express.Multer.File[], writtenFiles: string[] = []) {
 
         const result = await withTransaction(async (db: any) => {
 
@@ -27,16 +27,21 @@ class ProductService {
                 };
             }
 
-            const image = await manageImageService.loadImage(file, writtenFiles);
+            const images = await manageImageService.loadImage(file, writtenFiles); 
+            
+            const imageIds:Number[] = []; 
+            for(const image of images){
+                const [img] = await this.repo.storeProductImages(image.filename);
 
-            const [img] = await this.repo.storeProductImages(image.filename);
+                const imageId = (img as any).insertId; 
 
-            const imageId = (img as any).insertId;
+                imageIds.push(imageId)
 
-            await this.repo.storeProduct(title, imageId);
+                await this.repo.storeProduct(title, imageId);
+            }
 
             return {
-                imageId,
+                imageIds,
                 productId: 'testing'
             };
         });
