@@ -16,9 +16,9 @@ class ProductService {
         return this.repo.show();
     }
 
-    async store(title: string, file?: Express.Multer.File[], writtenFiles: string[] = []) {
+    async store(title: string, slot:[], file?: Express.Multer.File[], writtenFiles: string[] = []) {
 
-        const result = await withTransaction(async (db: any) => {
+        const result = await withTransaction(async () => {
 
             if (!file) {
                 await this.repo.storeProduct(title);
@@ -30,15 +30,16 @@ class ProductService {
             const images = await manageImageService.loadImage(file, writtenFiles); 
             
             const imageIds:Number[] = []; 
-            for(const image of images){
-                const [img] = await this.repo.storeProductImages(image.filename);
+            
+            const [img] = await this.repo.storeProduct(title);
+            
+            const imageId = (img as any).insertId; 
+            console.log('fk',imageId)
 
-                const imageId = (img as any).insertId; 
-
-                imageIds.push(imageId)
-
-                await this.repo.storeProduct(title, imageId);
-            }
+            for (const [index, image] of images.entries()) {
+                let slotNumber = slot[index];
+                await this.repo.storeProductImages(image.filename, slotNumber, imageId);
+            } 
 
             return {
                 imageIds,

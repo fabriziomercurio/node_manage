@@ -21,8 +21,8 @@ class ProductRepository
     return conn.query("SELECT * FROM product_images WHERE id = ?", [id]);
    }
 
-   async storeProduct(title:string, imageId?:number|null){
-     return conn.query(`INSERT INTO products (title, imageId) VALUES (?,?)`,[title,imageId]); 
+  async storeProduct(title:string){
+     return conn.query(`INSERT INTO products (title) VALUES (?)`,[title]); 
    } 
 
   async updateRecord(title:string,id:string|string[]|undefined, imageId?:number|null) 
@@ -61,9 +61,9 @@ class ProductRepository
      return conn.query(`UPDATE products SET imageId = NULL WHERE id = ?`,[id]); 
    }
 
-   async storeProductImages(filename:string)
-   {
-     return conn.query(`INSERT INTO product_images (name) VALUES (?)`,[filename]);
+   async storeProductImages(filename:string,slot:any,fk:number)
+   { 
+     return conn.query(`INSERT INTO product_images (name,slot,fk_product) VALUES (?,?,?)`,[filename,slot,fk]);
    }
 } 
 

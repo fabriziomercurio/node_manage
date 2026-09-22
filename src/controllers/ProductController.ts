@@ -31,14 +31,15 @@ const productController = {
         }       
     }, 
 
-    async store(req: Request, res: Response) {   
+    async store(req: Request, res: Response) {    
+    
+    const {title, slot } = req.body
     
     const writtenFiles: string[] = [];
 
-    try {     
-        console.log(req.files)  
+    try {         
         const files = req.files as Express.Multer.File[]; 
-        serviceProduct.store(req.body.title,files,writtenFiles);
+        serviceProduct.store(title,slot,files,writtenFiles);
         successResponse(res,null,'record insert with success');
 
     } catch (err: any) {

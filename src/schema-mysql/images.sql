@@ -3,7 +3,10 @@ DROP TABLE IF EXISTS product_images;
 
 CREATE TABLE product_images (
   id integer PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(255) NULL,
+  name VARCHAR(255) NULL, 
+  slot integer unsigned NOT NULL,
+  fk_product integer NOT NULL, 
+  FOREIGN KEY (fk_product) REFERENCES products(id),
   created_at TIMESTAMP NOT NULL DEFAULT NOW(), 
   updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE CURRENT_TIMESTAMP
 );
