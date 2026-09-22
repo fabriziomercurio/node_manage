@@ -68,21 +68,19 @@ class ProductService {
         );
     }
 
-    async edit(id: string | string[] | undefined) {
+    async edit(id: string | string[] | undefined) { 
         const sizes: string[] = ['original', 'medium', 'min'];
         const [record]: any = await this.repo.findIdProduct(id);
 
         if (!record || record.length === 0) throw new Error(`Record not found`);
 
-        if (record[0].imageId == null) return { result: record[0] };
-
-        const [result]: any = await this.repo.joinProductAndImageProduct(id);
-
+        const result: any = await this.repo.joinProductAndImageProduct(id);  
+console.log("result array images " + result)
         const created = result[0]?.created_at;
 
         if (created) result[0].created_at = new Date(created).toISOString().split("T")[0]; //overwritten created_at field  
-
-        return { result: result[0], sizes };
+return { result: result, sizes };
+        // return { result: result[0], sizes };
     }
 
     async update(id: string | string[] | undefined, removeImage: string, title: string, file?: Express.Multer.File, writtenFiles: string[] = []) {

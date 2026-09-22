@@ -31,7 +31,7 @@ router.get('/products', CheckTokenBlackList, productController.show);
 
 router.post('/products', upload.array("image"),  productController.store);
 
-router.get('/products/:productId', validateID('productId'), productController.edit);
+router.get('/product/:productId', validateID('productId'), productController.edit);
 router.put('/product/:productId', validateID('productId'), upload.single('image'), productController.update);
 router.delete('/product/:productId', validateID('productId'), productController.delete);  
 

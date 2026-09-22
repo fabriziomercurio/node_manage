@@ -13,7 +13,7 @@ class ProductRepository
 
    async findIdProduct(id:string|string[]|undefined) 
    {
-    return conn.query("SELECT id,title,imageId FROM products WHERE id = ?", [id]);
+    return conn.query("SELECT id,title FROM products WHERE id = ?", [id]);
    }
 
    async findIdProductImage(id:string|string[]|undefined) 
@@ -47,9 +47,9 @@ class ProductRepository
 
    async joinProductAndImageProduct(id:string|string[]|undefined)
    {
-    return conn.query(`SELECT title,name,imageId,product_images.created_at FROM products 
-            INNER JOIN product_images ON product_images.id = products.imageId WHERE products.id = ?`,[id])
-   }
+     return conn.query(`SELECT title,name,slot,product_images.created_at FROM products 
+      INNER JOIN product_images ON product_images.fk_product = products.id WHERE product_images.fk_product = ?`,[id])
+   } 
 
    async removeRecordProductById(id:string|string[]|undefined) 
    {

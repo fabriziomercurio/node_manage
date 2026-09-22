@@ -23,9 +23,10 @@ const productController = {
     async edit(req:Request,res:Response) 
     {       
         try { 
-            const data:any = await serviceProduct.edit(req.params.productId);     
+            const {productId} = req.params; 
+            const data:any = await serviceProduct.edit(productId);     
             console.log('raw',data);       
-            return res.status(200).json({result: data.result, sizes:data.sizes});
+            return res.status(200).json({result: data.result[0], sizes:data.sizes});
         } catch (err) {
             errorResponse(res, err instanceof Error ? err.message : "Unknown error")
         }       
